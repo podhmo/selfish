@@ -13,7 +13,7 @@ cat <<-EOS > ~/.selfish/config.json
 EOS
 ```
 
-if you doesn't have github-access-token. [here](https://github.com/settings/tokens)
+if you don't have github-access-token. [here](https://github.com/settings/tokens)
 
 ## uploading gists
 
