@@ -2,9 +2,42 @@ package selfish
 
 import (
 	"bytes"
+	"io/ioutil"
 	"strings"
 	"testing"
+	"time"
 )
+
+func TestSaveCommit(t *testing.T) {
+	r := bytes.NewBufferString(strings.Trim(`
+435048d99f77300e5c33dd7ab46dbca2@head@Thu Aug 18 12:33:45 +0000 2016
+`, "\n"))
+	now, err := time.Parse(time.RubyDate, "Fri Aug 19 04:50:21 +0000 2016")
+	if err != nil {
+		t.Errorf("time parse error: %s", err)
+	}
+	commit := Commit{
+		ID:        "xxxx",
+		CreatedAt: now,
+		Alias:     "newItem",
+	}
+	w := &bytes.Buffer{}
+
+	err = saveCommit(w, r, commit)
+	if err != nil {
+		t.Errorf("saveCommit failured: %s", err)
+	}
+
+	text, err := ioutil.ReadAll(w)
+	if err != nil {
+		t.Errorf("invalid contents: %s", err)
+	}
+	result := strings.Split(string(text), "\n")[0]
+	expected := "xxxx@newItem@Fri Aug 19 04:50:21 +0000 2016"
+	if result != expected {
+		t.Errorf("commit line is must be %q but %q", expected, result)
+	}
+}
 
 func TestLoadCommit(t *testing.T) {
 	r := bytes.NewBufferString(strings.Trim(`
