@@ -1,9 +1,9 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
-	"path"
 )
 
 import (
@@ -16,28 +16,25 @@ import (
 	"github.com/podhmo/selfish"
 )
 
-// config
-var (
-	defaultHistFile string
-	defaultAlias    string
-)
-
-func init() {
-	defaultHistFile = path.Join(os.Getenv("HOME"), ".selfish.history")
-	defaultAlias = "head"
-	// fmt.Printf("history: %q, alias: %q\n", defaultHistFile, defaultAlias)
-}
-
 // AppMain is main function of Application
-func AppMain(client *github.Client, filenames []string) error {
+func AppMain(client *selfish.Client, alias string, filenames []string) error {
 	gist, err := selfish.NewGist(filenames)
 	if err != nil {
 		return err
 	}
 
-	latestCommit, err := selfish.LoadCommit(defaultHistFile, "head")
-	if err != nil {
-		return err
+	config := client.Config
+
+	// W: ignore err
+	var latestCommit *selfish.Commit
+    if alias == "" {
+        panic(alias)
+    }
+	if alias != "" {
+		latestCommit, err = selfish.LoadCommit(config.HistFile, alias)
+		if err != nil {
+			return err
+		}
 	}
 
 	var g *github.Gist
@@ -56,8 +53,8 @@ func AppMain(client *github.Client, filenames []string) error {
 		return errors.Wrapf(err, "gist api %s", action)
 	}
 
-	c := selfish.NewCommit(g, defaultAlias)
-	err = selfish.SaveCommit(defaultHistFile, c)
+	c := selfish.NewCommit(g, config.DefaultAlias)
+	err = selfish.SaveCommit(config.HistFile, c)
 	if err != nil {
 		return err
 	}
@@ -69,16 +66,27 @@ func AppMain(client *github.Client, filenames []string) error {
 	return nil
 }
 
+var alias = flag.String("alias", "", "alias name of uploaded gist")
+
 func main() {
-	if len(os.Args) <= 1 {
-		fmt.Fprintf(os.Stderr, "selfish <token>\n")
+	flag.Parse()
+	client, err := selfish.CreateClient()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%+v\n", err)
+		fmt.Fprintln(os.Stderr, "if config file is not found. then")
+		fmt.Println(`
+mkdir -p ~/.selfish
+cat <<-EOS > ~/.selfish/config.json
+{
+  "access_token": "<your github access token>"
+}
+EOS
+`)
 		os.Exit(1)
 	}
-	token := os.Args[1]
-	client := selfish.CreateClient(token)
-	err := AppMain(client, os.Args[2:])
+	err = AppMain(client, *alias, flag.Args())
 	if err != nil {
-		fmt.Printf("%+v\n", err)
+		fmt.Fprintf(os.Stderr, "%+v\n", err)
 		os.Exit(1)
 	}
 }
