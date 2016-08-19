@@ -35,9 +35,25 @@ func AppMain(client *github.Client, filenames []string) error {
 		return err
 	}
 
-	g, _, err := client.Gists.Create(gist)
+	latestCommit, err := selfish.LoadCommit(defaultHistFile, "head")
 	if err != nil {
-		return errors.Wrap(err, "gist api create")
+		return err
+	}
+
+	var g *github.Gist
+	var action string
+	if latestCommit == nil {
+		g, _, err = client.Gists.Create(gist)
+		action = "create"
+	} else {
+		gistID := latestCommit.ID
+		g, _, err = client.Gists.Edit(gistID, gist)
+		action = "update"
+
+	}
+
+	if err != nil {
+		return errors.Wrapf(err, "gist api %s", action)
 	}
 
 	c := selfish.NewCommit(g, defaultAlias)
@@ -46,6 +62,7 @@ func AppMain(client *github.Client, filenames []string) error {
 		return err
 	}
 
+	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, c.ID)
 	fmt.Fprintf(os.Stderr, "redirect to %q\n", *g.HTMLURL)
 	webbrowser.Open(*g.HTMLURL)
 	// selfish.PrintJSON(g)
