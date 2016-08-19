@@ -1,8 +1,8 @@
 default:
-	go build -o a.out
+	(cd cmd && go build -o ../bin/selfish)
 	make run
 
 run:
-	./a.out `cat ./selfish.config` hello.md || echo ok
+	./bin/selfish `cat ./selfish.config` hello.md || echo ok
 
 .PHONY: run default

@@ -56,7 +56,7 @@ func loadCommit(r io.Reader, alias string) (*Commit, error) {
 
 // SaveCommit saving uploading history
 func SaveCommit(filename string, c Commit) error {
-	fp, err := ioutil.TempFile(".", filename)
+	fp, err := ioutil.TempFile("", path.Base(filename))
 	if err != nil {
 		return errors.Wrap(err, ":")
 	}
@@ -65,7 +65,7 @@ func SaveCommit(filename string, c Commit) error {
 		w.Flush()
 		tmpname := fp.Name()
 		fp.Close()
-		os.Rename(path.Join(".", tmpname), path.Join(".", filename))
+		os.Rename(tmpname, filename)
 	}()
 	if _, err := os.Stat(filename); err != nil {
 		return saveCommit(w, nil, c)
@@ -86,15 +86,18 @@ func saveCommit(w io.Writer, r io.Reader, c Commit) error {
 
 	if r != nil {
 		sc := bufio.NewScanner(r)
+		newline := []byte("\n")
 		for sc.Scan() {
 			buf := sc.Bytes()
 			w.Write(buf)
+			w.Write(newline)
 		}
 	}
 	return nil
 }
 
-func newCommit(g *github.Gist, alias string) Commit {
+// NewCommit creates and initializes a new Commit object.
+func NewCommit(g *github.Gist, alias string) Commit {
 	c := Commit{
 		ID:        *g.ID,
 		CreatedAt: *g.CreatedAt,

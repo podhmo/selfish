@@ -1,19 +1,19 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/google/go-github/github"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
-	"strings"
-	"time"
+)
+
+import (
+	"github.com/podhmo/selfish"
 )
 
 func ppJSON(target interface{}) {
@@ -82,10 +82,16 @@ func NewGistFile(filename string) (*github.GistFile, error) {
 }
 
 // config
-const (
-	defaultHistFile string = "selfish.history"
-	defaultAlias    string = "head"
+var (
+	defaultHistFile string
+	defaultAlias    string
 )
+
+func init() {
+	defaultHistFile = path.Join(os.Getenv("HOME"), ".selfish.history")
+	defaultAlias = "head"
+    // fmt.Printf("history: %q, alias: %q\n", defaultHistFile, defaultAlias)
+}
 
 // AppMain is main function of Application
 func AppMain(client *github.Client, filenames []string) {
@@ -101,8 +107,8 @@ func AppMain(client *github.Client, filenames []string) {
 		log.Fatal(err)
 	}
 
-	c := newCommit(g, defaultAlias)
-	err = saveCommit(defaultHistFile, c)
+	c := selfish.NewCommit(g, defaultAlias)
+	err = selfish.SaveCommit(defaultHistFile, c)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		log.Fatal(err)
