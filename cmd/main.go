@@ -9,6 +9,7 @@ import (
 import (
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
+	"github.com/toqueteos/webbrowser"
 )
 
 import (
@@ -34,8 +35,7 @@ func AppMain(client *github.Client, filenames []string) error {
 		return err
 	}
 
-	g, response, err := client.Gists.Create(gist)
-    _ = response
+	g, _, err := client.Gists.Create(gist)
 	if err != nil {
 		return errors.Wrap(err, "gist api create")
 	}
@@ -45,10 +45,10 @@ func AppMain(client *github.Client, filenames []string) error {
 	if err != nil {
 		return err
 	}
-	// fmt.Println("g ----------------------------------------")
-	// ppJSON(g)
-	// fmt.Println("response ----------------------------------------")
-	// ppJSON(response)
+
+	fmt.Fprintf(os.Stderr, "redirect to %q\n", *g.HTMLURL)
+	webbrowser.Open(*g.HTMLURL)
+	// selfish.PrintJSON(g)
 	return nil
 }
 
