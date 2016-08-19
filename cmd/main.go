@@ -1,85 +1,19 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"github.com/google/go-github/github"
-	"golang.org/x/oauth2"
-	"io/ioutil"
-	"log"
 	"os"
 	"path"
 )
 
 import (
-	"github.com/podhmo/selfish"
+	"github.com/google/go-github/github"
+	"github.com/pkg/errors"
 )
 
-func ppJSON(target interface{}) {
-	b, err := json.Marshal(target)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var out bytes.Buffer
-	json.Indent(&out, b, " ", "    ")
-	out.WriteTo(os.Stdout)
-}
-
-// CreateClient is factory of github client
-func CreateClient(token string) *github.Client {
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token},
-	)
-	tc := oauth2.NewClient(oauth2.NoContext, ts)
-	return github.NewClient(tc)
-}
-
-// NewGist is shorthand of github.Gist object creation
-func NewGist(filenames []string) (*github.Gist, error) {
-	public := true
-	files := make(map[github.GistFilename]github.GistFile)
-
-	for _, filename := range filenames {
-		gistfile, err := NewGistFile(filename)
-		if err != nil {
-			log.Printf("skip file=%s err=%v\n", filename, err)
-			continue
-		}
-		k := github.GistFilename(path.Base(filename))
-		files[k] = *gistfile
-	}
-
-	gist := github.Gist{
-		Public: &public,
-		Files:  files,
-	}
-	return &gist, nil
-}
-
-// NewGistFile is shorthand of github.GistFile object creation
-func NewGistFile(filename string) (*github.GistFile, error) {
-	basename := path.Base(filename)
-	finfo, err := os.Stat(filename)
-	if err != nil {
-		return nil, err
-	}
-	size := int(finfo.Size())
-
-	byte, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-	content := string(byte)
-
-	gistfile := github.GistFile{
-		Size:     &size,
-		Filename: &basename,
-		Content:  &content,
-	}
-	return &gistfile, nil
-}
+import (
+	"github.com/podhmo/selfish"
+)
 
 // config
 var (
@@ -90,34 +24,32 @@ var (
 func init() {
 	defaultHistFile = path.Join(os.Getenv("HOME"), ".selfish.history")
 	defaultAlias = "head"
-    // fmt.Printf("history: %q, alias: %q\n", defaultHistFile, defaultAlias)
+	// fmt.Printf("history: %q, alias: %q\n", defaultHistFile, defaultAlias)
 }
 
 // AppMain is main function of Application
-func AppMain(client *github.Client, filenames []string) {
-	gist, err := NewGist(filenames)
+func AppMain(client *github.Client, filenames []string) error {
+	gist, err := selfish.NewGist(filenames)
 	if err != nil {
-		fmt.Printf("%+v\n", err)
-		log.Fatal(err)
+		return err
 	}
 
 	g, response, err := client.Gists.Create(gist)
+    _ = response
 	if err != nil {
-		fmt.Printf("%+v\n", err)
-		log.Fatal(err)
+		return errors.Wrap(err, "gist api create")
 	}
 
 	c := selfish.NewCommit(g, defaultAlias)
 	err = selfish.SaveCommit(defaultHistFile, c)
 	if err != nil {
-		fmt.Printf("%+v\n", err)
-		log.Fatal(err)
+		return err
 	}
-
-	fmt.Println("g ----------------------------------------")
-	ppJSON(g)
-	fmt.Println("response ----------------------------------------")
-	ppJSON(response)
+	// fmt.Println("g ----------------------------------------")
+	// ppJSON(g)
+	// fmt.Println("response ----------------------------------------")
+	// ppJSON(response)
+	return nil
 }
 
 func main() {
@@ -126,6 +58,10 @@ func main() {
 		os.Exit(1)
 	}
 	token := os.Args[1]
-	client := CreateClient(token)
-	AppMain(client, os.Args[2:])
+	client := selfish.CreateClient(token)
+	err := AppMain(client, os.Args[2:])
+	if err != nil {
+		fmt.Printf("%+v\n", err)
+		os.Exit(1)
+	}
 }

@@ -26,11 +26,11 @@ type Commit struct {
 // LoadCommit loading uploading history
 func LoadCommit(filename string, alias string) (*Commit, error) {
 	if _, err := os.Stat(filename); err != nil {
-		return nil, errors.Wrap(err, ":")
+		return nil, errors.Wrap(err, "stat")
 	}
 	fp, err := os.Open(filename)
 	if err != nil {
-		return nil, errors.Wrap(err, ":")
+		return nil, errors.Wrap(err, "open")
 	}
 	defer fp.Close()
 	return loadCommit(fp, alias)
@@ -45,7 +45,7 @@ func loadCommit(r io.Reader, alias string) (*Commit, error) {
 		if data[1] == alias {
 			createdAt, err := time.Parse(time.RubyDate, data[2])
 			if err != nil {
-				return nil, errors.Wrap(err, ":")
+				return nil, errors.Wrap(err, "time.parse")
 			}
 			c := Commit{ID: data[0], Alias: data[1], CreatedAt: createdAt}
 			return &c, nil
@@ -58,7 +58,7 @@ func loadCommit(r io.Reader, alias string) (*Commit, error) {
 func SaveCommit(filename string, c Commit) error {
 	fp, err := ioutil.TempFile("", path.Base(filename))
 	if err != nil {
-		return errors.Wrap(err, ":")
+		return errors.Wrap(err, "tempfile")
 	}
 	w := bufio.NewWriter(fp)
 	defer func() {
@@ -73,7 +73,7 @@ func SaveCommit(filename string, c Commit) error {
 
 	rp, err := os.Open(filename)
 	if err != nil {
-		return errors.Wrap(err, ":")
+		return errors.Wrap(err, "open")
 	}
 	defer rp.Close()
 	return saveCommit(w, rp, c)
