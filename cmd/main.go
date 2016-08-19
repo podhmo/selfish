@@ -16,8 +16,30 @@ import (
 	"github.com/podhmo/selfish"
 )
 
-// AppMain is main function of Application
-func AppMain(client *selfish.Client, alias string, filenames []string) error {
+func appDelete(client *selfish.Client, alias string) error {
+	config := client.Config
+
+	// W: ignore err
+	var latestCommit *selfish.Commit
+	latestCommit, err := selfish.LoadCommit(config.HistFile, alias)
+	if err != nil {
+		return err
+	}
+	if latestCommit == nil {
+		return errors.Errorf("alias=%q is not found", alias)
+	}
+
+	gistID := latestCommit.ID
+	_, err = client.Gists.Delete(gistID)
+
+	if err != nil {
+		return errors.Wrapf(err, "gist api delete")
+	}
+	fmt.Fprintf(os.Stderr, "deleted. (id=%q)\n", gistID)
+	return nil
+}
+
+func appMain(client *selfish.Client, alias string, filenames []string) error {
 	gist, err := selfish.NewGist(filenames)
 	if err != nil {
 		return err
@@ -27,9 +49,6 @@ func AppMain(client *selfish.Client, alias string, filenames []string) error {
 
 	// W: ignore err
 	var latestCommit *selfish.Commit
-    if alias == "" {
-        panic(alias)
-    }
 	if alias != "" {
 		latestCommit, err = selfish.LoadCommit(config.HistFile, alias)
 		if err != nil {
@@ -53,20 +72,31 @@ func AppMain(client *selfish.Client, alias string, filenames []string) error {
 		return errors.Wrapf(err, "gist api %s", action)
 	}
 
-	c := selfish.NewCommit(g, config.DefaultAlias)
+	var saveAlias string
+	if alias == "" {
+		saveAlias = config.DefaultAlias
+	} else {
+		saveAlias = alias
+	}
+
+	c := selfish.NewCommit(g, saveAlias)
 	err = selfish.SaveCommit(config.HistFile, c)
 	if err != nil {
 		return err
 	}
 
 	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, c.ID)
-	fmt.Fprintf(os.Stderr, "redirect to %q\n", *g.HTMLURL)
-	webbrowser.Open(*g.HTMLURL)
+	if !*silentFlag {
+		fmt.Fprintf(os.Stderr, "opening.. %q\n", *g.HTMLURL)
+		webbrowser.Open(*g.HTMLURL)
+	}
 	// selfish.PrintJSON(g)
 	return nil
 }
 
-var alias = flag.String("alias", "", "alias name of uploaded gist")
+var aliasFlag = flag.String("alias", "", "alias name of uploaded gists")
+var deleteFlag = flag.Bool("delete", false, "delete uploaded gists")
+var silentFlag = flag.Bool("silent", false, "deactivate webbrowser open, after gists uploading")
 
 func main() {
 	flag.Parse()
@@ -84,7 +114,11 @@ EOS
 `)
 		os.Exit(1)
 	}
-	err = AppMain(client, *alias, flag.Args())
+	if *deleteFlag && *aliasFlag != "" {
+		err = appDelete(client, *aliasFlag)
+	} else {
+		err = appMain(client, *aliasFlag, flag.Args())
+	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%+v\n", err)
 		os.Exit(1)
