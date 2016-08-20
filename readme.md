@@ -2,6 +2,12 @@
 
 selfish is individual gist client.
 
+## install
+
+```
+go get github.com/podhmo/selfish/cmd/selfish
+```
+
 ## init setting
 
 ```bash
