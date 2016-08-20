@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 )
 
 import (
@@ -35,6 +36,9 @@ func appDelete(client *selfish.Client, alias string) error {
 	if err != nil {
 		return errors.Wrapf(err, "gist api delete")
 	}
+
+	c := selfish.Commit{ID: gistID, Alias: alias, CreatedAt: time.Now(), Action: "delete"}
+	err = selfish.SaveCommit(config.HistFile, c)
 	fmt.Fprintf(os.Stderr, "deleted. (id=%q)\n", gistID)
 	return nil
 }
