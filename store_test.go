@@ -10,7 +10,7 @@ import (
 
 func TestSaveCommit(t *testing.T) {
 	r := bytes.NewBufferString(strings.Trim(`
-435048d99f77300e5c33dd7ab46dbca2@head@Thu Aug 18 12:33:45 +0000 2016
+435048d99f77300e5c33dd7ab46dbca2@head@Thu Aug 18 12:33:45 +0000 2016@create
 `, "\n"))
 	now, err := time.Parse(time.RubyDate, "Fri Aug 19 04:50:21 +0000 2016")
 	if err != nil {
@@ -20,6 +20,7 @@ func TestSaveCommit(t *testing.T) {
 		ID:        "xxxx",
 		CreatedAt: now,
 		Alias:     "newItem",
+		Action:    "create",
 	}
 	w := &bytes.Buffer{}
 
@@ -33,7 +34,7 @@ func TestSaveCommit(t *testing.T) {
 		t.Errorf("invalid contents: %s", err)
 	}
 	result := strings.Split(string(text), "\n")[0]
-	expected := "xxxx@newItem@Fri Aug 19 04:50:21 +0000 2016"
+	expected := "xxxx@newItem@Fri Aug 19 04:50:21 +0000 2016@create"
 	if result != expected {
 		t.Errorf("commit line is must be %q but %q", expected, result)
 	}
@@ -41,8 +42,8 @@ func TestSaveCommit(t *testing.T) {
 
 func TestLoadCommit(t *testing.T) {
 	r := bytes.NewBufferString(strings.Trim(`
-68332035342c0cbd0ed6792e0869882c@head@Fri Aug 19 04:50:21 +0000 2016
-435048d99f77300e5c33dd7ab46dbca2@head@Thu Aug 18 12:33:45 +0000 2016
+68332035342c0cbd0ed6792e0869882c@head@Fri Aug 19 04:50:21 +0000 2016@update
+435048d99f77300e5c33dd7ab46dbca2@head@Thu Aug 18 12:33:45 +0000 2016@create
 `, "\n"))
 
 	cases := []struct {

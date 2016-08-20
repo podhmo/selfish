@@ -21,6 +21,7 @@ type Commit struct {
 	ID        string
 	CreatedAt time.Time
 	Alias     string // optional
+	Action    string
 }
 
 // LoadCommit loading uploading history
@@ -40,8 +41,8 @@ func loadCommit(r io.Reader, alias string) (*Commit, error) {
 	sc := bufio.NewScanner(r)
 	for sc.Scan() {
 		line := sc.Text()
-		// id@alias@CreatedAt
-		data := strings.SplitN(line, "@", 3)
+		// id@alias@CreatedAt@Action
+		data := strings.SplitN(line, "@", 4)
 		if data[1] == alias {
 			createdAt, err := time.Parse(time.RubyDate, data[2])
 			if err != nil {
@@ -82,7 +83,7 @@ func SaveCommit(filename string, c Commit) error {
 func saveCommit(w io.Writer, r io.Reader, c Commit) error {
 	createdAt := c.CreatedAt.Format(time.RubyDate)
 	// id@alias@CreatedAt
-	fmt.Fprintf(w, "%s@%s@%s\n", c.ID, c.Alias, createdAt)
+	fmt.Fprintf(w, "%s@%s@%s@%s\n", c.ID, c.Alias, createdAt, c.Action)
 
 	if r != nil {
 		sc := bufio.NewScanner(r)
@@ -97,11 +98,12 @@ func saveCommit(w io.Writer, r io.Reader, c Commit) error {
 }
 
 // NewCommit creates and initializes a new Commit object.
-func NewCommit(g *github.Gist, alias string) Commit {
+func NewCommit(g *github.Gist, alias string, action string) Commit {
 	c := Commit{
 		ID:        *g.ID,
 		CreatedAt: *g.CreatedAt,
 		Alias:     alias,
+		Action:    action,
 	}
 	return c
 }

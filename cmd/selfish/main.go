@@ -79,7 +79,7 @@ func appMain(client *selfish.Client, alias string, filenames []string) error {
 		saveAlias = alias
 	}
 
-	c := selfish.NewCommit(g, saveAlias)
+	c := selfish.NewCommit(g, saveAlias, action)
 	err = selfish.SaveCommit(config.HistFile, c)
 	if err != nil {
 		return err
