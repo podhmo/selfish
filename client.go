@@ -14,12 +14,12 @@ type Client struct {
 // CreateClient is factory of github client
 func CreateClient() (*Client, error) {
 	config, err := LoadConfig()
-    if err != nil {
-        return nil, err
-    }
-    gclient := createGithubClient(config.AccessToken)
-    client := Client{Client: gclient, Config: config}
-    return &client, nil
+	if err != nil {
+		return nil, err
+	}
+	gclient := createGithubClient(config.AccessToken)
+	client := Client{Client: gclient, Config: config}
+	return &client, nil
 }
 
 func createGithubClient(token string) *github.Client {
