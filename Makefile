@@ -8,4 +8,7 @@ build:
 run:
 	./bin/selfish data/hello.md || echo ok
 
-.PHONY: run default build
+test:
+	go test -cover
+
+.PHONY: run default build test
