@@ -1,23 +1,19 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
 	"time"
-)
 
-import (
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
+	"github.com/podhmo/selfish"
 	"github.com/toqueteos/webbrowser"
 )
 
-import (
-	"github.com/podhmo/selfish"
-)
-
-func appDelete(client *selfish.Client, alias string) error {
+func appDelete(ctx context.Context, client *selfish.Client, alias string) error {
 	config := client.Config
 
 	// W: ignore err
@@ -31,7 +27,7 @@ func appDelete(client *selfish.Client, alias string) error {
 	}
 
 	gistID := latestCommit.ID
-	_, err = client.Gists.Delete(gistID)
+	_, err = client.Gists.Delete(ctx, gistID)
 
 	if err != nil {
 		return errors.Wrapf(err, "gist api delete")
@@ -43,7 +39,7 @@ func appDelete(client *selfish.Client, alias string) error {
 	return nil
 }
 
-func appMain(client *selfish.Client, alias string, filenames []string) error {
+func appMain(ctx context.Context, client *selfish.Client, alias string, filenames []string) error {
 	gist, err := selfish.NewGist(filenames)
 	if err != nil {
 		return err
@@ -63,11 +59,11 @@ func appMain(client *selfish.Client, alias string, filenames []string) error {
 	var g *github.Gist
 	var action string
 	if latestCommit == nil {
-		g, _, err = client.Gists.Create(gist)
+		g, _, err = client.Gists.Create(ctx, gist)
 		action = "create"
 	} else {
 		gistID := latestCommit.ID
-		g, _, err = client.Gists.Edit(gistID, gist)
+		g, _, err = client.Gists.Edit(ctx, gistID, gist)
 		action = "update"
 
 	}
@@ -118,10 +114,11 @@ EOS
 `)
 		os.Exit(1)
 	}
+	ctx := context.Background()
 	if *deleteFlag && *aliasFlag != "" {
-		err = appDelete(client, *aliasFlag)
+		err = appDelete(ctx, client, *aliasFlag)
 	} else {
-		err = appMain(client, *aliasFlag, flag.Args())
+		err = appMain(ctx, client, *aliasFlag, flag.Args())
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%+v\n", err)
