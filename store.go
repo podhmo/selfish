@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -57,7 +56,8 @@ func loadCommit(r io.Reader, alias string) (*Commit, error) {
 
 // SaveCommit saving uploading history
 func SaveCommit(filename string, c Commit) error {
-	fp, err := ioutil.TempFile("", path.Base(filename))
+	tmppath := path.Join(path.Dir(filename), fmt.Sprintf(".cache.%s", path.Base(filename)))
+	fp, err := os.Create(tmppath)
 	if err != nil {
 		return errors.Wrap(err, "tempfile")
 	}
