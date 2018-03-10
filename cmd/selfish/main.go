@@ -27,12 +27,12 @@ func run() error {
 	c := commithistory.New("selfish")
 	config, err := selfish.LoadConfig(c)
 
-	if err != nil {
+	if config.AccessToken == "" {
 		fmt.Fprintf(os.Stderr, "%+v\n", err)
 		fmt.Fprintln(os.Stderr, "if config file is not found. then")
 		fmt.Println(`
-mkdir -p ~/.selfish
-cat <<-EOS > ~/.selfish/config.json
+mkdir -p ~/.config/selfish
+cat <<-EOS > ~/.config/selfish/config.json
 {
   "access_token": "<your github access token>"
 }

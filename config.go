@@ -13,7 +13,8 @@ type Config struct {
 }
 
 const (
-	defaultAlias = "head"
+	defaultAlias    = "head"
+	defaultHistFile = "selfish.history"
 )
 
 // ResolveAlias :
@@ -32,6 +33,9 @@ func LoadConfig(c *commithistory.Config) (*Config, error) {
 	}
 	if conf.DefaultAlias == "" {
 		conf.DefaultAlias = defaultAlias
+	}
+	if conf.HistFile == "" {
+		conf.HistFile = defaultHistFile
 	}
 	return &conf, nil
 }
