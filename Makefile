@@ -11,4 +11,7 @@ run:
 test:
 	go test -cover
 
+vendor-update:
+	dep ensure --update
+
 .PHONY: run default build test
