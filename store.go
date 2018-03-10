@@ -1,109 +1,18 @@
 package selfish
 
 import (
-	"bufio"
-	"fmt"
-	"io"
-	"os"
-	"path"
-	"strings"
-	"time"
-)
-
-import (
 	"github.com/google/go-github/github"
-	"github.com/pkg/errors"
+	"github.com/podhmo/commithistory"
 )
 
-// Commit is a tiny expression of gist uploading history.
-type Commit struct {
-	ID        string
-	CreatedAt time.Time
-	Alias     string // optional
-	Action    string
-}
-
-// LoadCommit loading uploading history
-func LoadCommit(filename string, alias string) (*Commit, error) {
-	if _, err := os.Stat(filename); err != nil {
-		return nil, errors.Wrap(err, "stat")
-	}
-	fp, err := os.Open(filename)
-	if err != nil {
-		return nil, errors.Wrap(err, "open")
-	}
-	defer fp.Close()
-	return loadCommit(fp, alias)
-}
-
-func loadCommit(r io.Reader, alias string) (*Commit, error) {
-	sc := bufio.NewScanner(r)
-	for sc.Scan() {
-		line := sc.Text()
-		// id@alias@CreatedAt@Action
-		data := strings.SplitN(line, "@", 4)
-		if data[1] == alias {
-			createdAt, err := time.Parse(time.RubyDate, data[2])
-			if err != nil {
-				return nil, errors.Wrap(err, "time.parse")
-			}
-			c := Commit{ID: data[0], Alias: data[1], CreatedAt: createdAt}
-			return &c, nil
-		}
-	}
-	return nil, nil
-}
-
-// SaveCommit saving uploading history
-func SaveCommit(filename string, c Commit) error {
-	tmppath := path.Join(path.Dir(filename), fmt.Sprintf(".cache.%s", path.Base(filename)))
-	fp, err := os.Create(tmppath)
-	if err != nil {
-		return errors.Wrap(err, "tempfile")
-	}
-	w := bufio.NewWriter(fp)
-	defer func() {
-		w.Flush()
-		tmpname := fp.Name()
-		fp.Close()
-		os.Rename(tmpname, filename)
-	}()
-	if _, err := os.Stat(filename); err != nil {
-		return saveCommit(w, nil, c)
-	}
-
-	rp, err := os.Open(filename)
-	if err != nil {
-		return errors.Wrap(err, "open")
-	}
-	defer rp.Close()
-	return saveCommit(w, rp, c)
-}
-
-func saveCommit(w io.Writer, r io.Reader, c Commit) error {
-	createdAt := c.CreatedAt.Format(time.RubyDate)
-	// id@alias@CreatedAt
-	fmt.Fprintf(w, "%s@%s@%s@%s\n", c.ID, c.Alias, createdAt, c.Action)
-
-	if r != nil {
-		sc := bufio.NewScanner(r)
-		newline := []byte("\n")
-		for sc.Scan() {
-			buf := sc.Bytes()
-			w.Write(buf)
-			w.Write(newline)
-		}
-	}
-	return nil
-}
+type Commit = commithistory.Commit
 
 // NewCommit creates and initializes a new Commit object.
-func NewCommit(g *github.Gist, alias string, action string) Commit {
-	c := Commit{
+func NewCommit(g *github.Gist, alias string, action string) *Commit {
+	return &Commit{
 		ID:        *g.ID,
 		CreatedAt: *g.CreatedAt,
 		Alias:     alias,
 		Action:    action,
 	}
-	return c
 }

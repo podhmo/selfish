@@ -5,102 +5,28 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
 
-	"github.com/google/go-github/github"
-	"github.com/pkg/errors"
+	"github.com/podhmo/commithistory"
 	"github.com/podhmo/selfish"
-	"github.com/toqueteos/webbrowser"
+	"github.com/podhmo/selfish/cmd/selfish/internal"
 )
-
-func appDelete(ctx context.Context, client *selfish.Client, alias string) error {
-	config := client.Config
-
-	// W: ignore err
-	var latestCommit *selfish.Commit
-	latestCommit, err := selfish.LoadCommit(config.HistFile, alias)
-	if err != nil {
-		return err
-	}
-	if latestCommit == nil {
-		return errors.Errorf("alias=%q is not found", alias)
-	}
-
-	gistID := latestCommit.ID
-	_, err = client.Gists.Delete(ctx, gistID)
-
-	if err != nil {
-		return errors.Wrapf(err, "gist api delete")
-	}
-
-	c := selfish.Commit{ID: gistID, Alias: alias, CreatedAt: time.Now(), Action: "delete"}
-	err = selfish.SaveCommit(config.HistFile, c)
-	fmt.Fprintf(os.Stderr, "deleted. (id=%q)\n", gistID)
-	return nil
-}
-
-func appMain(ctx context.Context, client *selfish.Client, alias string, filenames []string) error {
-	gist, err := selfish.NewGist(filenames)
-	if err != nil {
-		return err
-	}
-
-	config := client.Config
-
-	// W: ignore err
-	var latestCommit *selfish.Commit
-	if alias != "" {
-		latestCommit, err = selfish.LoadCommit(config.HistFile, alias)
-		if err != nil {
-			return err
-		}
-	}
-
-	var g *github.Gist
-	var action string
-	if latestCommit == nil {
-		g, _, err = client.Gists.Create(ctx, gist)
-		action = "create"
-	} else {
-		gistID := latestCommit.ID
-		g, _, err = client.Gists.Edit(ctx, gistID, gist)
-		action = "update"
-
-	}
-
-	if err != nil {
-		return errors.Wrapf(err, "gist api %s", action)
-	}
-
-	var saveAlias string
-	if alias == "" {
-		saveAlias = config.DefaultAlias
-	} else {
-		saveAlias = alias
-	}
-
-	c := selfish.NewCommit(g, saveAlias, action)
-	err = selfish.SaveCommit(config.HistFile, c)
-	if err != nil {
-		return err
-	}
-
-	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, c.ID)
-	if !*silentFlag {
-		fmt.Fprintf(os.Stderr, "opening.. %q\n", *g.HTMLURL)
-		webbrowser.Open(*g.HTMLURL)
-	}
-	// selfish.PrintJSON(g)
-	return nil
-}
 
 var aliasFlag = flag.String("alias", "", "alias name of uploaded gists")
 var deleteFlag = flag.Bool("delete", false, "delete uploaded gists")
 var silentFlag = flag.Bool("silent", false, "deactivate webbrowser open, after gists uploading")
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "%+v\n", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	flag.Parse()
-	client, err := selfish.CreateClient()
+	c := commithistory.New("selfish")
+	config, err := selfish.LoadConfig(c)
+
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%+v\n", err)
 		fmt.Fprintln(os.Stderr, "if config file is not found. then")
@@ -114,14 +40,24 @@ EOS
 `)
 		os.Exit(1)
 	}
+
+	client := selfish.NewClient(config)
+
+	app := &internal.App{Config: config, Client: client, C: c, IsSilent: *silentFlag}
 	ctx := context.Background()
-	if *deleteFlag && *aliasFlag != "" {
-		err = appDelete(ctx, client, *aliasFlag)
-	} else {
-		err = appMain(ctx, client, *aliasFlag, flag.Args())
+
+	var latestCommit *selfish.Commit
+	if *aliasFlag != "" {
+		latestCommit, err = app.FindLatestCommit(app.Config.HistFile, *aliasFlag)
+		if err != nil {
+			return err
+		}
 	}
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%+v\n", err)
-		os.Exit(1)
+	if *deleteFlag && *aliasFlag != "" {
+		return app.Delete(ctx, latestCommit, *aliasFlag)
+	} else if latestCommit == nil {
+		return app.Create(ctx, latestCommit, *aliasFlag, flag.Args())
+	} else {
+		return app.Update(ctx, latestCommit, *aliasFlag, flag.Args())
 	}
 }

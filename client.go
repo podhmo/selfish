@@ -7,25 +7,14 @@ import (
 
 // Client object
 type Client struct {
-	Config *Config
 	*github.Client
 }
 
-// CreateClient is factory of github client
-func CreateClient() (*Client, error) {
-	config, err := LoadConfig()
-	if err != nil {
-		return nil, err
-	}
-	gclient := createGithubClient(config.AccessToken)
-	client := Client{Client: gclient, Config: config}
-	return &client, nil
-}
-
-func createGithubClient(token string) *github.Client {
+// NewClient is factory of github client
+func NewClient(c *Config) *Client {
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token},
+		&oauth2.Token{AccessToken: c.AccessToken},
 	)
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
-	return github.NewClient(tc)
+	return &Client{Client: github.NewClient(tc)}
 }
