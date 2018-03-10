@@ -1,4 +1,4 @@
-package selfish
+package pputil
 
 import (
 	"bytes"
@@ -22,5 +22,5 @@ func FprintJSON(w io.Writer, data interface{}) {
 
 // PrintJSON is similar that a relation about fmt.Printf and fmt.Fprintf.
 func PrintJSON(data interface{}) {
-    FprintJSON(os.Stdout, data)
+	FprintJSON(os.Stdout, data)
 }
