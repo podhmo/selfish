@@ -11,8 +11,8 @@ go get github.com/podhmo/selfish/cmd/selfish
 ## init setting
 
 ```bash
-mkdir -p ~/.selfish
-cat <<-EOS > ~/.selfish/config.json
+mkdir -p ~/.config/selfish
+cat <<-EOS > ~/.config/selfish/config.json
 {
   "access_token": "<your github access token>"
 }
