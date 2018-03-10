@@ -46,5 +46,6 @@
   name = "golang.org/x/oauth2"
 
 [prune]
+  non-go = true
   go-tests = true
   unused-packages = true
