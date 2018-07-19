@@ -1,4 +1,4 @@
-selfish
+bin/*
 selfish.config
 *.out
 *.test
