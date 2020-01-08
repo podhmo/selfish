@@ -1,12 +1,14 @@
 package selfish
 
 import (
-	"github.com/google/go-github/github"
-	"github.com/pkg/errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
+
+	"github.com/google/go-github/github"
+	"github.com/pkg/errors"
 )
 
 // NewGist is shorthand of github.Gist object creation
@@ -39,6 +41,9 @@ func NewGistFile(filename string) (*github.GistFile, error) {
 		return nil, errors.Wrap(err, "stat")
 	}
 	size := int(finfo.Size())
+	if size == 0 {
+		return nil, fmt.Errorf("empty file")
+	}
 
 	byte, err := ioutil.ReadFile(filename)
 	if err != nil {
