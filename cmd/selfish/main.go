@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/podhmo/commithistory"
+	"github.com/podhmo/selfish/internal/commithistory"
 	"github.com/podhmo/selfish"
 	"github.com/podhmo/selfish/cmd/selfish/internal"
 )

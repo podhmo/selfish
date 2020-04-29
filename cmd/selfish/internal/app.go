@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/podhmo/commithistory"
+	"github.com/podhmo/selfish/internal/commithistory"
 	"github.com/podhmo/selfish"
 	"github.com/toqueteos/webbrowser"
 )
