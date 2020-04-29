@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/podhmo/selfish/internal/commithistory"
 	"github.com/podhmo/selfish"
 	"github.com/podhmo/selfish/cmd/selfish/internal"
+	"github.com/podhmo/selfish/internal/commithistory"
 )
 
 var aliasFlag = flag.String("alias", "", "alias name of uploaded gists")
@@ -43,17 +43,24 @@ EOS
 
 	client := selfish.NewClient(config)
 
-	app := &internal.App{Config: config, Client: client, C: c, IsSilent: *silentFlag}
+	app := &internal.App{
+		Config:   config,
+		Client:   client,
+		C:        c,
+		IsSilent: *silentFlag,
+		Alias:    *aliasFlag,
+	}
 	ctx := context.Background()
 
 	var latestCommit *selfish.Commit
-	if *aliasFlag != "" {
+	if app.Alias != "" {
 		latestCommit, err = app.FindLatestCommit(app.Config.HistFile, *aliasFlag)
 		if err != nil {
 			return err
 		}
 	}
-	if *deleteFlag && *aliasFlag != "" {
+
+	if app.IsDelete && app.Alias != "" {
 		return app.Delete(ctx, latestCommit, *aliasFlag)
 	} else if latestCommit == nil {
 		return app.Create(ctx, latestCommit, *aliasFlag, flag.Args())

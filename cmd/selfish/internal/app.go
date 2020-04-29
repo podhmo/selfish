@@ -16,10 +16,13 @@ import (
 
 // App :
 type App struct {
-	C        *commithistory.Config // todo: rename
-	Client   *selfish.Client
-	Config   *selfish.Config
+	C      *commithistory.Config // todo: rename
+	Client *selfish.Client
+	Config *selfish.Config
+
 	IsSilent bool
+	IsDelete bool
+	Alias    string
 }
 
 // FindLatestCommit :
