@@ -2,7 +2,7 @@ package selfish
 
 import (
 	"github.com/google/go-github/github"
-	"github.com/podhmo/commithistory"
+	"github.com/podhmo/selfish/internal/commithistory"
 )
 
 type Commit = commithistory.Commit
