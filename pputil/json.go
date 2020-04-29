@@ -1,7 +1,6 @@
 package pputil
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"log"
@@ -10,14 +9,11 @@ import (
 
 // FprintJSON is pretty printed json output shorthand.
 func FprintJSON(w io.Writer, data interface{}) {
-	b, err := json.Marshal(data)
-	if err != nil {
+	encoder := json.NewEncoder(w)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(data); err != nil {
 		log.Fatal(err)
 	}
-
-	var out bytes.Buffer
-	json.Indent(&out, b, " ", "    ")
-	out.WriteTo(w)
 }
 
 // PrintJSON is similar that a relation about fmt.Printf and fmt.Fprintf.
