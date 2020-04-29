@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/podhmo/selfish/internal/commithistory"
 	"github.com/podhmo/selfish"
+	"github.com/podhmo/selfish/cmd/selfish/internal/pputil"
+	"github.com/podhmo/selfish/internal/commithistory"
 	"github.com/toqueteos/webbrowser"
 )
 
@@ -91,6 +93,9 @@ func (app *App) Update(ctx context.Context, latestCommit *selfish.Commit, alias 
 		fmt.Fprintf(os.Stderr, "opening.. %q\n", *g.HTMLURL)
 		webbrowser.Open(*g.HTMLURL)
 	}
-	// pputil.PrintJSON(g)
+
+	if ok, _ := strconv.ParseBool(os.Getenv("DEBUG")); ok {
+		pputil.FprintJSON(os.Stderr, g)
+	}
 	return nil
 }
