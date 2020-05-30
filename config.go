@@ -26,9 +26,9 @@ func (c *Config) ResolveAlias(alias string) string {
 }
 
 // LoadConfig loads configuration file, if configuration file is not existed, then return default config.
-func LoadConfig(c *commithistory.Config) (*Config, error) {
+func LoadConfig(api *commithistory.API) (*Config, error) {
 	var conf Config
-	if err := c.Load("config.json", &conf); err != nil {
+	if err := api.Load("config.json", &conf); err != nil {
 		return nil, errors.Wrap(err, "load config")
 	}
 	if conf.DefaultAlias == "" {

@@ -5,14 +5,14 @@ import (
 	"github.com/podhmo/selfish/internal/commithistory/history"
 )
 
-// Config :
-type Config struct {
+// API :
+type API struct {
 	*config.Config
 }
 
 // New :
-func New(name string, ops ...func(*Config)) *Config {
-	c := &Config{Config: config.New(name)}
+func New(name string, ops ...func(*API)) *API {
+	c := &API{Config: config.New(name)}
 	for _, op := range ops {
 		op(c)
 	}
@@ -20,24 +20,24 @@ func New(name string, ops ...func(*Config)) *Config {
 }
 
 // WithProfile :
-func WithProfile(profile string) func(*Config) {
-	return func(c *Config) {
+func WithProfile(profile string) func(*API) {
+	return func(c *API) {
 		c.Config.Profile = profile
 	}
 }
 
 // Load :
-func (c *Config) Load(name string, ob interface{}) error {
+func (c *API) Load(name string, ob interface{}) error {
 	return c.Config.Load(name, ob)
 }
 
 // Save :
-func (c *Config) Save(name string, ob interface{}) error {
+func (c *API) Save(name string, ob interface{}) error {
 	return c.Config.Save(name, ob)
 }
 
 // LoadCommit :
-func (c *Config) LoadCommit(filename, alias string, ob history.Parsable) error {
+func (c *API) LoadCommit(filename, alias string, ob history.Parsable) error {
 	dirpath, err := c.Dir(c.Name)
 	if err != nil {
 		return err
@@ -47,7 +47,7 @@ func (c *Config) LoadCommit(filename, alias string, ob history.Parsable) error {
 }
 
 // SaveCommit :
-func (c *Config) SaveCommit(filename string, ob history.Unparsable) error {
+func (c *API) SaveCommit(filename string, ob history.Unparsable) error {
 	dirpath, err := c.Dir(c.Name)
 	if err != nil {
 		return err
@@ -57,6 +57,6 @@ func (c *Config) SaveCommit(filename string, ob history.Unparsable) error {
 }
 
 // IsNotFound :
-func (c *Config) IsNotFound(err error) bool {
+func (c *API) IsNotFound(err error) bool {
 	return history.IsNotFound(err)
 }
