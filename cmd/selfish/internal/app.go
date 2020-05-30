@@ -16,17 +16,60 @@ import (
 
 // App :
 type App struct {
-	C        *commithistory.Config // todo: rename
-	Client   *selfish.Client
-	Config   *selfish.Config
+	CommitHistory *commithistory.API
+	Client        *selfish.Client
+	Config        *selfish.Config
+
 	IsSilent bool
+	IsDelete bool
+	Alias    string
+}
+
+// NewApp :
+func NewApp(
+	commitHistory *commithistory.API,
+	Client *selfish.Client,
+	Config *selfish.Config,
+
+	IsSilent bool,
+	IsDelete bool,
+	Alias string,
+) *App {
+	return &App{
+		CommitHistory: commitHistory,
+		Client:        Client,
+		Config:        Config,
+
+		IsSilent: IsSilent,
+		IsDelete: IsDelete,
+		Alias:    Alias,
+	}
+}
+
+// Run :
+func (app *App) Run(ctx context.Context, files []string) (err error) {
+	var latestCommit *selfish.Commit
+	if app.Alias != "" {
+		latestCommit, err = app.FindLatestCommit(app.Config.HistFile, app.Alias)
+		if err != nil {
+			return err
+		}
+	}
+
+	if app.IsDelete && app.Alias != "" {
+		return app.Delete(ctx, latestCommit, app.Alias)
+	} else if latestCommit == nil {
+		return app.Create(ctx, latestCommit, app.Alias, files)
+	} else {
+		return app.Update(ctx, latestCommit, app.Alias, files)
+	}
 }
 
 // FindLatestCommit :
 func (app *App) FindLatestCommit(filename, alias string) (*selfish.Commit, error) {
 	var c selfish.Commit
-	if err := app.C.LoadCommit(filename, alias, &c); err != nil {
-		if app.C.IsNotFound(err) {
+	if err := app.CommitHistory.LoadCommit(filename, alias, &c); err != nil {
+		if app.CommitHistory.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, errors.Wrap(err, "load commit")
@@ -46,7 +89,7 @@ func (app *App) Delete(ctx context.Context, latestCommit *selfish.Commit, alias 
 	}
 
 	c := selfish.Commit{ID: gistID, Alias: alias, CreatedAt: time.Now(), Action: "delete"}
-	if err := app.C.SaveCommit(app.Config.HistFile, &c); err != nil {
+	if err := app.CommitHistory.SaveCommit(app.Config.HistFile, &c); err != nil {
 		return errors.Wrap(err, "save commit")
 	}
 	fmt.Fprintf(os.Stderr, "deleted. (id=%q)\n", gistID)
@@ -62,7 +105,7 @@ func (app *App) Create(ctx context.Context, latestCommit *selfish.Commit, alias 
 	}
 
 	c := selfish.NewCommit(g, app.Config.ResolveAlias(alias), action)
-	if err := app.C.SaveCommit(app.Config.HistFile, c); err != nil {
+	if err := app.CommitHistory.SaveCommit(app.Config.HistFile, c); err != nil {
 		return err
 	}
 
@@ -84,7 +127,7 @@ func (app *App) Update(ctx context.Context, latestCommit *selfish.Commit, alias 
 	}
 
 	c := selfish.NewCommit(g, app.Config.ResolveAlias(alias), action)
-	if err := app.C.SaveCommit(app.Config.HistFile, c); err != nil {
+	if err := app.CommitHistory.SaveCommit(app.Config.HistFile, c); err != nil {
 		return err
 	}
 
