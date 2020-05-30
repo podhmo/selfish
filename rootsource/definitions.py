@@ -20,7 +20,7 @@ def selfish(*, alias: str, delete: bool, silent: bool) -> GoError:
     options = runtime.get_cli_options()
     options.alias.help = "alias name of uploaded gists"
     options.delete.help = "delete uploaded gists"
-    options.silent.help = "deactivate webbrowser open, after gists uploading"
+    options.silent.help = "don't open gist pages, after uploaded"
 
     with runtime.generate(clikit) as m:
         b = di.Builder()
@@ -32,9 +32,9 @@ def selfish(*, alias: str, delete: bool, silent: bool) -> GoError:
         injector = b.build(variables={**locals(), "name": m.symbol('"selfish"')})
         app = injector.inject(m)
 
-        context = m.import_("context")
+        context_pkg = m.import_("context")
         args = runtime.get_cli_rest_args()
-        m.return_(app.Run(context.Background(), args))
+        m.return_(app.Run(context_pkg.Background(), args))
 
 
 if __name__ == "__main__":
