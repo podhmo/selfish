@@ -15,3 +15,9 @@ vendor-update:
 	dep ensure --update
 
 .PHONY: run default build test
+
+########################################
+gen:
+	# pip install -r rootsource/requirements.txt
+	python rootsource/definitions.py generate
+.PHONY: gen
