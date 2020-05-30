@@ -33,7 +33,7 @@ func main() {
 	}
 	cmd.StringVar(&opt.Alias, "alias", "", "alias name of uploaded gists")
 	cmd.BoolVar(&opt.Delete, "delete", false, "delete uploaded gists")
-	cmd.BoolVar(&opt.Silent, "silent", false, "deactivate webbrowser open, after gists uploading")
+	cmd.BoolVar(&opt.Silent, "silent", false, "don't open gist pages, after uploaded")
 
 	if err := cmd.Parse(os.Args[1:]); err != nil {
 		if err != flag.ErrHelp {
