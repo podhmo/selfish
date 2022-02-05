@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/podhmo/selfish/internal/commithistory/timeutil"
+	"github.com/podhmo/selfish/pkg/commithistory/timeutil"
 )
 
 func TestUnparse(t *testing.T) {

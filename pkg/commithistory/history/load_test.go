@@ -1,4 +1,4 @@
-package historytest
+package history_test
 
 import (
 	"fmt"
@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/podhmo/selfish/internal/commithistory"
-	"github.com/podhmo/selfish/internal/commithistory/history"
-	"github.com/podhmo/selfish/internal/commithistory/timeutil"
+	"github.com/podhmo/selfish/pkg/commithistory"
+	"github.com/podhmo/selfish/pkg/commithistory/history"
+	"github.com/podhmo/selfish/pkg/commithistory/timeutil"
 )
 
 func TestLoad(t *testing.T) {

@@ -2,7 +2,7 @@ package selfish
 
 import (
 	"github.com/pkg/errors"
-	"github.com/podhmo/selfish/internal/commithistory"
+	"github.com/podhmo/selfish/pkg/commithistory"
 )
 
 // Config is mapping object for application config
