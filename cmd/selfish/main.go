@@ -36,12 +36,12 @@ func main() {
 }
 
 func run(opt *Option) error {
-	v4 := commithistory.New("selfish")
-	v5, err := selfish.LoadConfig(v4)
+	ch := commithistory.New("selfish")
+	c, err := selfish.LoadConfig(ch)
 	if err != nil {
 		return err
 	}
-	if v5.AccessToken == "" {
+	if c.AccessToken == "" {
 		fmt.Fprintln(os.Stderr, "if config file is not found. then")
 		fmt.Println(`
 	mkdir -p ~/.config/selfish
@@ -55,8 +55,14 @@ func run(opt *Option) error {
 	}
 
 	ctx := context.Background()
-	v6 := selfish.NewClient(v5)
-	app := internal.NewApp(v4, v6, v5, opt.Silent, opt.Delete, opt.Alias)
+	app := &internal.App{
+		CommitHistory: ch,
+		Client:        selfish.NewClient(c),
+		Config:        c,
+		IsSilent:      opt.Silent,
+		IsDelete:      opt.Delete,
+		Alias:         opt.Alias,
+	}
 
 	var latestCommit *selfish.Commit
 	if app.Alias != "" {

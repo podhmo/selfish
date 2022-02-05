@@ -27,27 +27,6 @@ type App struct {
 	Alias    string
 }
 
-// NewApp :
-func NewApp(
-	commitHistory *commithistory.API,
-	Client *selfish.Client,
-	Config *selfish.Config,
-
-	IsSilent bool,
-	IsDelete bool,
-	Alias string,
-) *App {
-	return &App{
-		CommitHistory: commitHistory,
-		Client:        Client,
-		Config:        Config,
-
-		IsSilent: IsSilent,
-		IsDelete: IsDelete,
-		Alias:    Alias,
-	}
-}
-
 // FindLatestCommit :
 func (app *App) FindLatestCommit(filename, alias string) (*selfish.Commit, error) {
 	var c selfish.Commit
