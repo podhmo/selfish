@@ -6,6 +6,10 @@ github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 h1:zLTLjkaOF
 github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135/go.mod h1:odCYkC5MyYFN7vkCjXpyrEuKhc/BUO6wN/zVPAxq5ck=
 github.com/pkg/errors v0.8.0 h1:WdK/asTD0HN+q6hsWO3/vpuAkAr+tw6aNJNDFFf0+qw=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
+github.com/podhmo/structflag v0.1.1 h1:hK8HFqnWCDoXf+G08uB30JqvmD0MWp8O7WridCIIyf8=
+github.com/podhmo/structflag v0.1.1/go.mod h1:7ViwZ381hbkS7S2EduKRTzhld3vaYMQlQNCaca253iA=
+github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=
+github.com/spf13/pflag v1.0.5/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/toqueteos/webbrowser v1.1.0 h1:Prj1okiysRgHPoe3B1bOIVxcv+UuSt525BDQmR5W0x0=
 github.com/toqueteos/webbrowser v1.1.0/go.mod h1:Hqqqmzj8AHn+VlZyVjaRWY20i25hoOZGAABCcg2el4A=
 golang.org/x/net v0.0.0-20180308154319-d0aafc73d5cd h1:GNzbLJRy/nHOFS5m5780xbL4nia5w6cyb8exQGYw3Z4=
