@@ -1,4 +1,4 @@
-package config
+package commithistory
 
 import (
 	"encoding/json"
@@ -19,12 +19,8 @@ type Config struct {
 	Dir      func(name string) (string, error)
 }
 
-// New :
-func New(name string, ops ...func(*Config)) *Config {
-	c := &Config{Name: name}
-	for _, op := range ops {
-		op(c)
-	}
+func DefaultConfig() *Config {
+	c := &Config{}
 	if c.Dir == nil {
 		c.Dir = DefaultConfigDir
 	}
@@ -35,27 +31,6 @@ func New(name string, ops ...func(*Config)) *Config {
 		c.JoinPath = DefaultJoinPath
 	}
 	return c
-}
-
-// WithProfile :
-func WithProfile(profile string) func(*Config) {
-	return func(c *Config) {
-		c.Profile = profile
-	}
-}
-
-// WithDirFunction :
-func WithDirFunction(dir func(name string) (string, error)) func(*Config) {
-	return func(c *Config) {
-		c.Dir = dir
-	}
-}
-
-// WithDefaultFunction :
-func WithDefaultFunction(writefile func(path string) error) func(*Config) {
-	return func(c *Config) {
-		c.Default = writefile
-	}
 }
 
 // DefaultJoinPath :

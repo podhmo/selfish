@@ -1,18 +1,18 @@
 package commithistory
 
 import (
-	"github.com/podhmo/selfish/pkg/commithistory/config"
 	"github.com/podhmo/selfish/pkg/commithistory/history"
 )
 
 // API :
 type API struct {
-	*config.Config
+	*Config
 }
 
 // New :
 func New(name string, ops ...func(*API)) *API {
-	c := &API{Config: config.New(name)}
+	c := &API{Config: DefaultConfig()}
+	c.Config.Name = name
 	for _, op := range ops {
 		op(c)
 	}
