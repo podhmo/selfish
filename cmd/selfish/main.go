@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/podhmo/selfish"
 	"github.com/podhmo/selfish/cmd/selfish/internal"
 	"github.com/podhmo/selfish/pkg/commithistory"
@@ -66,9 +67,13 @@ func run(opt *Option) error {
 
 	var latestCommit *selfish.Commit
 	if app.Alias != "" {
-		latestCommit, err = app.FindLatestCommit(app.Config.HistFile, app.Alias)
-		if err != nil {
-			return err
+		var c selfish.Commit
+		if err := app.CommitHistory.LoadCommit(app.Config.HistFile, opt.Alias, &c); err != nil {
+			if !app.CommitHistory.IsNotFound(err) {
+				return errors.Wrap(err, "load commit")
+			}
+		} else {
+			latestCommit = &c
 		}
 	}
 

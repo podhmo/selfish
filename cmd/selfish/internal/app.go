@@ -27,18 +27,6 @@ type App struct {
 	Alias    string
 }
 
-// FindLatestCommit :
-func (app *App) FindLatestCommit(filename, alias string) (*selfish.Commit, error) {
-	var c selfish.Commit
-	if err := app.CommitHistory.LoadCommit(filename, alias, &c); err != nil {
-		if app.CommitHistory.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, errors.Wrap(err, "load commit")
-	}
-	return &c, nil
-}
-
 // Delete :
 func (app *App) Delete(ctx context.Context, latestCommit *selfish.Commit, alias string) error {
 	if latestCommit == nil {
