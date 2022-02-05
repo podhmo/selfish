@@ -2,14 +2,16 @@ package internal
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/podhmo/selfish"
-	"github.com/podhmo/selfish/cmd/selfish/internal/pputil"
 	"github.com/podhmo/selfish/pkg/commithistory"
 	"github.com/toqueteos/webbrowser"
 )
@@ -43,25 +45,6 @@ func NewApp(
 		IsSilent: IsSilent,
 		IsDelete: IsDelete,
 		Alias:    Alias,
-	}
-}
-
-// Run :
-func (app *App) Run(ctx context.Context, files []string) (err error) {
-	var latestCommit *selfish.Commit
-	if app.Alias != "" {
-		latestCommit, err = app.FindLatestCommit(app.Config.HistFile, app.Alias)
-		if err != nil {
-			return err
-		}
-	}
-
-	if app.IsDelete && app.Alias != "" {
-		return app.Delete(ctx, latestCommit, app.Alias)
-	} else if latestCommit == nil {
-		return app.Create(ctx, latestCommit, app.Alias, files)
-	} else {
-		return app.Update(ctx, latestCommit, app.Alias, files)
 	}
 }
 
@@ -114,7 +97,7 @@ func (app *App) Create(ctx context.Context, latestCommit *selfish.Commit, alias 
 		fmt.Fprintf(os.Stderr, "opening.. %q\n", *g.HTMLURL)
 		webbrowser.Open(*g.HTMLURL)
 	}
-	// pputil.PrintJSON(g)
+	// PrintJSON(g)
 	return nil
 }
 
@@ -138,7 +121,21 @@ func (app *App) Update(ctx context.Context, latestCommit *selfish.Commit, alias 
 	}
 
 	if ok, _ := strconv.ParseBool(os.Getenv("DEBUG")); ok {
-		pputil.FprintJSON(os.Stderr, g)
+		FprintJSON(os.Stderr, g)
 	}
 	return nil
+}
+
+// FprintJSON is pretty printed json output shorthand.
+func FprintJSON(w io.Writer, data interface{}) {
+	encoder := json.NewEncoder(w)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(data); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// PrintJSON is similar that a relation about fmt.Printf and fmt.Fprintf.
+func PrintJSON(data interface{}) {
+	FprintJSON(os.Stdout, data)
 }
