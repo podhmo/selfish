@@ -7,7 +7,7 @@ class CommitHistory:
     pass
 
 
-@gopackage("github.com/podhmo/selfish/internal/commithistory")
+@gopackage("github.com/podhmo/selfish/pkg/commithistory")
 @rename("New")
 def NewCommitHistory(name: str) -> CommitHistory:
     pass

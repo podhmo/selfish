@@ -7,7 +7,7 @@ import (
 
 	"github.com/podhmo/selfish"
 	"github.com/podhmo/selfish/cmd/selfish/internal"
-	"github.com/podhmo/selfish/internal/commithistory"
+	"github.com/podhmo/selfish/pkg/commithistory"
 	"github.com/podhmo/structflag"
 )
 

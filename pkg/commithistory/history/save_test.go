@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/podhmo/selfish/internal/commithistory"
-	"github.com/podhmo/selfish/internal/commithistory/history"
+	"github.com/podhmo/selfish/pkg/commithistory"
+	"github.com/podhmo/selfish/pkg/commithistory/history"
 )
 
 func must(t time.Time, err error) time.Time {

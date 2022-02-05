@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/podhmo/selfish"
 	"github.com/podhmo/selfish/cmd/selfish/internal/pputil"
-	"github.com/podhmo/selfish/internal/commithistory"
+	"github.com/podhmo/selfish/pkg/commithistory"
 	"github.com/toqueteos/webbrowser"
 )
 

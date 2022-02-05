@@ -1,8 +1,8 @@
 package commithistory
 
 import (
-	"github.com/podhmo/selfish/internal/commithistory/config"
-	"github.com/podhmo/selfish/internal/commithistory/history"
+	"github.com/podhmo/selfish/pkg/commithistory/config"
+	"github.com/podhmo/selfish/pkg/commithistory/history"
 )
 
 // API :
