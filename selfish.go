@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/google/go-github/github"
@@ -19,9 +18,26 @@ import (
 
 // Config is mapping object for application config
 type Config struct {
-	DefaultAlias string `json:"default_alias"`
-	AccessToken  string `json:"access_token"`
-	HistFile     string `json:"hist_file"`
+	Profile struct {
+		DefaultAlias string `json:"default_alias"`
+		AccessToken  string `json:"access_token"`
+		HistFile     string `json:"hist_file"`
+	} `flag:"-"`
+
+	Alias    string   `flag:"alias" help:"alias name of uploaded gists"`
+	IsDelete bool     `flag:"delete" help:"delete uploaded gists"`
+	IsSilent bool     `flag:"silent" help:"don't open gist pages with browser, after uploading"`
+	Files    []string `flag:"-"`
+
+	Debug bool `flag:"debug"`
+}
+
+// ResolveAlias :
+func (c *Config) ResolveAlias(alias string) string {
+	if alias == "" {
+		return c.Profile.DefaultAlias
+	}
+	return alias
 }
 
 const (
@@ -29,50 +45,58 @@ const (
 	defaultHistFile = "selfish.history"
 )
 
-// ResolveAlias :
-func (c *Config) ResolveAlias(alias string) string {
-	if alias == "" {
-		return c.DefaultAlias
-	}
-	return alias
-}
-
-// LoadConfig loads configuration file, if configuration file is not existed, then return default config.
-func LoadConfig(api *commithistory.API) (*Config, error) {
-	var conf Config
-	if err := api.Load("config.json", &conf); err != nil {
-		return nil, errors.Wrap(err, "load config")
-	}
-	if conf.DefaultAlias == "" {
-		conf.DefaultAlias = defaultAlias
-	}
-	if conf.HistFile == "" {
-		conf.HistFile = defaultHistFile
-	}
-	return &conf, nil
-}
-
 // App :
 type App struct {
 	CommitHistory *commithistory.API
 	Client        *github.Client
-	Config        *Config
 
-	IsSilent bool
-	IsDelete bool
-	Alias    string
+	*Config
 }
 
-func NewGithubClient(c *Config) *github.Client {
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: c.AccessToken},
-	)
-	tc := oauth2.NewClient(oauth2.NoContext, ts)
-	return github.NewClient(tc)
+var ErrAccessTokenNotfound = fmt.Errorf("access token is not found")
+
+func NewApp(c *Config) (*App, error) {
+	ch := commithistory.New("selfish")
+	{
+		if err := ch.Load("config.json", &c.Profile); err != nil {
+			return nil, errors.Wrap(err, "load config")
+		}
+		if c.Profile.AccessToken == "" {
+			return nil, ErrAccessTokenNotfound
+		}
+
+		if c.Profile.DefaultAlias == "" {
+			c.Profile.DefaultAlias = defaultAlias
+		}
+		if c.Profile.HistFile == "" {
+			c.Profile.HistFile = defaultHistFile
+		}
+	}
+
+	// if c.Debug {
+	// 	fmt.Fprintln(os.Stderr, "config loaded")
+	// 	fprintJSON(os.Stderr, c)
+	// }
+
+	var client *github.Client
+	{
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: c.Profile.AccessToken},
+		)
+		tc := oauth2.NewClient(oauth2.NoContext, ts)
+		client = github.NewClient(tc)
+	}
+
+	return &App{
+		CommitHistory: ch,
+		Client:        client,
+		Config:        c,
+	}, nil
 }
 
 // Delete :
-func (app *App) Delete(ctx context.Context, latestCommit *Commit, alias string) error {
+func (app *App) Delete(ctx context.Context, latestCommit *Commit) error {
+	alias := app.Alias
 	if latestCommit == nil {
 		return errors.Errorf("alias=%q is not found", alias)
 	}
@@ -83,7 +107,7 @@ func (app *App) Delete(ctx context.Context, latestCommit *Commit, alias string) 
 	}
 
 	c := Commit{ID: gistID, Alias: alias, CreatedAt: time.Now(), Action: "delete"}
-	if err := app.CommitHistory.SaveCommit(app.Config.HistFile, &c); err != nil {
+	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, &c); err != nil {
 		return errors.Wrap(err, "save commit")
 	}
 	fmt.Fprintf(os.Stderr, "deleted. (id=%q)\n", gistID)
@@ -91,8 +115,9 @@ func (app *App) Delete(ctx context.Context, latestCommit *Commit, alias string) 
 }
 
 // Create :
-func (app *App) Create(ctx context.Context, latestCommit *Commit, alias string, filenames []string) error {
+func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []string) error {
 	action := "create"
+	alias := app.Alias
 
 	gist, err := NewGist(filenames)
 	if err != nil {
@@ -104,7 +129,7 @@ func (app *App) Create(ctx context.Context, latestCommit *Commit, alias string, 
 	}
 
 	c := NewCommit(g, app.Config.ResolveAlias(alias), action)
-	if err := app.CommitHistory.SaveCommit(app.Config.HistFile, c); err != nil {
+	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, c); err != nil {
 		return err
 	}
 
@@ -118,8 +143,9 @@ func (app *App) Create(ctx context.Context, latestCommit *Commit, alias string, 
 }
 
 // Update :
-func (app *App) Update(ctx context.Context, latestCommit *Commit, alias string, filenames []string) error {
+func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []string) error {
 	action := "update"
+	alias := app.Alias
 
 	gist, err := NewGist(filenames)
 	if err != nil {
@@ -131,7 +157,7 @@ func (app *App) Update(ctx context.Context, latestCommit *Commit, alias string, 
 	}
 
 	c := NewCommit(g, app.Config.ResolveAlias(alias), action)
-	if err := app.CommitHistory.SaveCommit(app.Config.HistFile, c); err != nil {
+	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, c); err != nil {
 		return err
 	}
 
@@ -141,14 +167,14 @@ func (app *App) Update(ctx context.Context, latestCommit *Commit, alias string, 
 		webbrowser.Open(*g.HTMLURL)
 	}
 
-	if ok, _ := strconv.ParseBool(os.Getenv("DEBUG")); ok {
-		FprintJSON(os.Stderr, g)
+	if app.Config.Debug {
+		fprintJSON(os.Stderr, g)
 	}
 	return nil
 }
 
-// FprintJSON is pretty printed json output shorthand.
-func FprintJSON(w io.Writer, data interface{}) {
+// fprintJSON is pretty printed json output shorthand.
+func fprintJSON(w io.Writer, data interface{}) {
 	encoder := json.NewEncoder(w)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(data); err != nil {
@@ -158,5 +184,5 @@ func FprintJSON(w io.Writer, data interface{}) {
 
 // PrintJSON is similar that a relation about fmt.Printf and fmt.Fprintf.
 func PrintJSON(data interface{}) {
-	FprintJSON(os.Stdout, data)
+	fprintJSON(os.Stdout, data)
 }
