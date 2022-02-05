@@ -12,13 +12,10 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
-	"github.com/podhmo/selfish/model"
 	"github.com/podhmo/selfish/pkg/commithistory"
 	"github.com/toqueteos/webbrowser"
 	"golang.org/x/oauth2"
 )
-
-type Commit = model.Commit // TODO: remove
 
 // Config is mapping object for application config
 type Config struct {
@@ -53,6 +50,7 @@ func LoadConfig(api *commithistory.API) (*Config, error) {
 		conf.HistFile = defaultHistFile
 	}
 	return &conf, nil
+}
 
 // App :
 type App struct {
@@ -74,7 +72,7 @@ func NewGithubClient(c *Config) *github.Client {
 }
 
 // Delete :
-func (app *App) Delete(ctx context.Context, latestCommit *model.Commit, alias string) error {
+func (app *App) Delete(ctx context.Context, latestCommit *Commit, alias string) error {
 	if latestCommit == nil {
 		return errors.Errorf("alias=%q is not found", alias)
 	}
@@ -84,7 +82,7 @@ func (app *App) Delete(ctx context.Context, latestCommit *model.Commit, alias st
 		return errors.Wrapf(err, "gist api delete")
 	}
 
-	c := model.Commit{ID: gistID, Alias: alias, CreatedAt: time.Now(), Action: "delete"}
+	c := Commit{ID: gistID, Alias: alias, CreatedAt: time.Now(), Action: "delete"}
 	if err := app.CommitHistory.SaveCommit(app.Config.HistFile, &c); err != nil {
 		return errors.Wrap(err, "save commit")
 	}
@@ -93,10 +91,10 @@ func (app *App) Delete(ctx context.Context, latestCommit *model.Commit, alias st
 }
 
 // Create :
-func (app *App) Create(ctx context.Context, latestCommit *model.Commit, alias string, filenames []string) error {
+func (app *App) Create(ctx context.Context, latestCommit *Commit, alias string, filenames []string) error {
 	action := "create"
 
-	gist, err := model.NewGist(filenames)
+	gist, err := NewGist(filenames)
 	if err != nil {
 		return err
 	}
@@ -105,7 +103,7 @@ func (app *App) Create(ctx context.Context, latestCommit *model.Commit, alias st
 		return errors.Wrapf(err, "gist api %s", action)
 	}
 
-	c := model.NewCommit(g, app.Config.ResolveAlias(alias), action)
+	c := NewCommit(g, app.Config.ResolveAlias(alias), action)
 	if err := app.CommitHistory.SaveCommit(app.Config.HistFile, c); err != nil {
 		return err
 	}
@@ -123,7 +121,7 @@ func (app *App) Create(ctx context.Context, latestCommit *model.Commit, alias st
 func (app *App) Update(ctx context.Context, latestCommit *Commit, alias string, filenames []string) error {
 	action := "update"
 
-	gist, err := model.NewGist(filenames)
+	gist, err := NewGist(filenames)
 	if err != nil {
 		return err
 	}
@@ -132,7 +130,7 @@ func (app *App) Update(ctx context.Context, latestCommit *Commit, alias string, 
 		return errors.Wrapf(err, "gist api %s", action)
 	}
 
-	c := model.NewCommit(g, app.Config.ResolveAlias(alias), action)
+	c := NewCommit(g, app.Config.ResolveAlias(alias), action)
 	if err := app.CommitHistory.SaveCommit(app.Config.HistFile, c); err != nil {
 		return err
 	}
