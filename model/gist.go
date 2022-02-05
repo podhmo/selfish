@@ -1,4 +1,4 @@
-package selfish
+package model
 
 import (
 	"fmt"
@@ -11,8 +11,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+type Gist = github.Gist
+
 // NewGist is shorthand of github.Gist object creation
-func NewGist(filenames []string) (*github.Gist, error) {
+func NewGist(filenames []string) (*Gist, error) {
 	public := true
 	files := make(map[github.GistFilename]github.GistFile)
 
@@ -33,8 +35,10 @@ func NewGist(filenames []string) (*github.Gist, error) {
 	return &gist, nil
 }
 
+type GistFile = github.GistFile
+
 // NewGistFile is shorthand of github.GistFile object creation
-func NewGistFile(filename string) (*github.GistFile, error) {
+func NewGistFile(filename string) (*GistFile, error) {
 	basename := path.Base(filename)
 	finfo, err := os.Stat(filename)
 	if err != nil {

@@ -1,4 +1,4 @@
-package internal
+package selfish
 
 import (
 	"context"
@@ -11,16 +11,18 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/podhmo/selfish"
+	"github.com/podhmo/selfish/model"
 	"github.com/podhmo/selfish/pkg/commithistory"
 	"github.com/toqueteos/webbrowser"
 )
 
+type Commit = model.Commit // TODO: remove
+
 // App :
 type App struct {
 	CommitHistory *commithistory.API
-	Client        *selfish.Client
-	Config        *selfish.Config
+	Client        *Client
+	Config        *Config
 
 	IsSilent bool
 	IsDelete bool
@@ -28,7 +30,7 @@ type App struct {
 }
 
 // Delete :
-func (app *App) Delete(ctx context.Context, latestCommit *selfish.Commit, alias string) error {
+func (app *App) Delete(ctx context.Context, latestCommit *model.Commit, alias string) error {
 	if latestCommit == nil {
 		return errors.Errorf("alias=%q is not found", alias)
 	}
@@ -38,7 +40,7 @@ func (app *App) Delete(ctx context.Context, latestCommit *selfish.Commit, alias 
 		return errors.Wrapf(err, "gist api delete")
 	}
 
-	c := selfish.Commit{ID: gistID, Alias: alias, CreatedAt: time.Now(), Action: "delete"}
+	c := model.Commit{ID: gistID, Alias: alias, CreatedAt: time.Now(), Action: "delete"}
 	if err := app.CommitHistory.SaveCommit(app.Config.HistFile, &c); err != nil {
 		return errors.Wrap(err, "save commit")
 	}
@@ -47,14 +49,14 @@ func (app *App) Delete(ctx context.Context, latestCommit *selfish.Commit, alias 
 }
 
 // Create :
-func (app *App) Create(ctx context.Context, latestCommit *selfish.Commit, alias string, filenames []string) error {
+func (app *App) Create(ctx context.Context, latestCommit *model.Commit, alias string, filenames []string) error {
 	action := "create"
 	g, err := app.Client.Create(ctx, filenames)
 	if err != nil {
 		return errors.Wrapf(err, "gist api %s", action)
 	}
 
-	c := selfish.NewCommit(g, app.Config.ResolveAlias(alias), action)
+	c := model.NewCommit(g, app.Config.ResolveAlias(alias), action)
 	if err := app.CommitHistory.SaveCommit(app.Config.HistFile, c); err != nil {
 		return err
 	}
@@ -69,14 +71,14 @@ func (app *App) Create(ctx context.Context, latestCommit *selfish.Commit, alias 
 }
 
 // Update :
-func (app *App) Update(ctx context.Context, latestCommit *selfish.Commit, alias string, filenames []string) error {
+func (app *App) Update(ctx context.Context, latestCommit *Commit, alias string, filenames []string) error {
 	action := "update"
 	g, err := app.Client.Update(ctx, latestCommit, filenames)
 	if err != nil {
 		return errors.Wrapf(err, "gist api %s", action)
 	}
 
-	c := selfish.NewCommit(g, app.Config.ResolveAlias(alias), action)
+	c := model.NewCommit(g, app.Config.ResolveAlias(alias), action)
 	if err := app.CommitHistory.SaveCommit(app.Config.HistFile, c); err != nil {
 		return err
 	}

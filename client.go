@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/go-github/github"
+	"github.com/podhmo/selfish/model"
 	"golang.org/x/oauth2"
 )
 
@@ -23,7 +24,7 @@ func NewClient(c *Config) *Client {
 
 // Create :
 func (c *Client) Create(ctx context.Context, filenames []string) (*github.Gist, error) {
-	gist, err := NewGist(filenames)
+	gist, err := model.NewGist(filenames)
 	if err != nil {
 		return nil, err
 	}
@@ -32,8 +33,8 @@ func (c *Client) Create(ctx context.Context, filenames []string) (*github.Gist, 
 }
 
 // Update :
-func (c *Client) Update(ctx context.Context, latestCommit *Commit, filenames []string) (*github.Gist, error) {
-	gist, err := NewGist(filenames)
+func (c *Client) Update(ctx context.Context, latestCommit *model.Commit, filenames []string) (*github.Gist, error) {
+	gist, err := model.NewGist(filenames)
 	if err != nil {
 		return nil, err
 	}

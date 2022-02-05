@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/podhmo/selfish"
-	"github.com/podhmo/selfish/cmd/selfish/internal"
 	"github.com/podhmo/selfish/pkg/commithistory"
 	"github.com/podhmo/structflag"
 )
@@ -56,7 +55,7 @@ func run(opt *Option) error {
 	}
 
 	ctx := context.Background()
-	app := &internal.App{
+	app := &selfish.App{
 		CommitHistory: ch,
 		Client:        selfish.NewClient(c),
 		Config:        c,

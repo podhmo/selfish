@@ -1,4 +1,4 @@
-package selfish
+package model
 
 import (
 	"github.com/google/go-github/github"
