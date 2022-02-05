@@ -57,7 +57,7 @@ func run(opt *Option) error {
 	ctx := context.Background()
 	app := &selfish.App{
 		CommitHistory: ch,
-		Client:        selfish.NewClient(c),
+		Client:        selfish.NewGithubClient(c),
 		Config:        c,
 		IsSilent:      opt.Silent,
 		IsDelete:      opt.Delete,

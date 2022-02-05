@@ -10,10 +10,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
 	"github.com/podhmo/selfish/model"
 	"github.com/podhmo/selfish/pkg/commithistory"
 	"github.com/toqueteos/webbrowser"
+	"golang.org/x/oauth2"
 )
 
 type Commit = model.Commit // TODO: remove
@@ -21,12 +23,20 @@ type Commit = model.Commit // TODO: remove
 // App :
 type App struct {
 	CommitHistory *commithistory.API
-	Client        *Client
+	Client        *github.Client
 	Config        *Config
 
 	IsSilent bool
 	IsDelete bool
 	Alias    string
+}
+
+func NewGithubClient(c *Config) *github.Client {
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: c.AccessToken},
+	)
+	tc := oauth2.NewClient(oauth2.NoContext, ts)
+	return github.NewClient(tc)
 }
 
 // Delete :
@@ -51,7 +61,12 @@ func (app *App) Delete(ctx context.Context, latestCommit *model.Commit, alias st
 // Create :
 func (app *App) Create(ctx context.Context, latestCommit *model.Commit, alias string, filenames []string) error {
 	action := "create"
-	g, err := app.Client.Create(ctx, filenames)
+
+	gist, err := model.NewGist(filenames)
+	if err != nil {
+		return err
+	}
+	g, _, err := app.Client.Gists.Create(ctx, gist)
 	if err != nil {
 		return errors.Wrapf(err, "gist api %s", action)
 	}
@@ -73,7 +88,12 @@ func (app *App) Create(ctx context.Context, latestCommit *model.Commit, alias st
 // Update :
 func (app *App) Update(ctx context.Context, latestCommit *Commit, alias string, filenames []string) error {
 	action := "update"
-	g, err := app.Client.Update(ctx, latestCommit, filenames)
+
+	gist, err := model.NewGist(filenames)
+	if err != nil {
+		return err
+	}
+	g, _, err := app.Client.Gists.Edit(ctx, latestCommit.ID, gist)
 	if err != nil {
 		return errors.Wrapf(err, "gist api %s", action)
 	}
