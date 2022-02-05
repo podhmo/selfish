@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/podhmo/selfish"
-	"github.com/podhmo/selfish/cmd/selfish/internal"
 	"github.com/podhmo/selfish/pkg/commithistory"
 	"github.com/podhmo/structflag"
 )
@@ -36,12 +36,12 @@ func main() {
 }
 
 func run(opt *Option) error {
-	v4 := commithistory.New("selfish")
-	v5, err := selfish.LoadConfig(v4)
+	ch := commithistory.New("selfish")
+	c, err := selfish.LoadConfig(ch)
 	if err != nil {
 		return err
 	}
-	if v5.AccessToken == "" {
+	if c.AccessToken == "" {
 		fmt.Fprintln(os.Stderr, "if config file is not found. then")
 		fmt.Println(`
 	mkdir -p ~/.config/selfish
@@ -55,14 +55,24 @@ func run(opt *Option) error {
 	}
 
 	ctx := context.Background()
-	v6 := selfish.NewClient(v5)
-	app := internal.NewApp(v4, v6, v5, opt.Silent, opt.Delete, opt.Alias)
+	app := &selfish.App{
+		CommitHistory: ch,
+		Client:        selfish.NewGithubClient(c),
+		Config:        c,
+		IsSilent:      opt.Silent,
+		IsDelete:      opt.Delete,
+		Alias:         opt.Alias,
+	}
 
 	var latestCommit *selfish.Commit
 	if app.Alias != "" {
-		latestCommit, err = app.FindLatestCommit(app.Config.HistFile, app.Alias)
-		if err != nil {
-			return err
+		var c selfish.Commit
+		if err := app.CommitHistory.LoadCommit(app.Config.HistFile, opt.Alias, &c); err != nil {
+			if !app.CommitHistory.IsNotFound(err) {
+				return errors.Wrap(err, "load commit")
+			}
+		} else {
+			latestCommit = &c
 		}
 	}
 

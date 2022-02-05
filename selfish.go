@@ -1,4 +1,4 @@
-package internal
+package selfish
 
 import (
 	"context"
@@ -10,58 +10,69 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
-	"github.com/podhmo/selfish"
 	"github.com/podhmo/selfish/pkg/commithistory"
 	"github.com/toqueteos/webbrowser"
+	"golang.org/x/oauth2"
 )
+
+// Config is mapping object for application config
+type Config struct {
+	DefaultAlias string `json:"default_alias"`
+	AccessToken  string `json:"access_token"`
+	HistFile     string `json:"hist_file"`
+}
+
+const (
+	defaultAlias    = "head"
+	defaultHistFile = "selfish.history"
+)
+
+// ResolveAlias :
+func (c *Config) ResolveAlias(alias string) string {
+	if alias == "" {
+		return c.DefaultAlias
+	}
+	return alias
+}
+
+// LoadConfig loads configuration file, if configuration file is not existed, then return default config.
+func LoadConfig(api *commithistory.API) (*Config, error) {
+	var conf Config
+	if err := api.Load("config.json", &conf); err != nil {
+		return nil, errors.Wrap(err, "load config")
+	}
+	if conf.DefaultAlias == "" {
+		conf.DefaultAlias = defaultAlias
+	}
+	if conf.HistFile == "" {
+		conf.HistFile = defaultHistFile
+	}
+	return &conf, nil
+}
 
 // App :
 type App struct {
 	CommitHistory *commithistory.API
-	Client        *selfish.Client
-	Config        *selfish.Config
+	Client        *github.Client
+	Config        *Config
 
 	IsSilent bool
 	IsDelete bool
 	Alias    string
 }
 
-// NewApp :
-func NewApp(
-	commitHistory *commithistory.API,
-	Client *selfish.Client,
-	Config *selfish.Config,
-
-	IsSilent bool,
-	IsDelete bool,
-	Alias string,
-) *App {
-	return &App{
-		CommitHistory: commitHistory,
-		Client:        Client,
-		Config:        Config,
-
-		IsSilent: IsSilent,
-		IsDelete: IsDelete,
-		Alias:    Alias,
-	}
-}
-
-// FindLatestCommit :
-func (app *App) FindLatestCommit(filename, alias string) (*selfish.Commit, error) {
-	var c selfish.Commit
-	if err := app.CommitHistory.LoadCommit(filename, alias, &c); err != nil {
-		if app.CommitHistory.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, errors.Wrap(err, "load commit")
-	}
-	return &c, nil
+func NewGithubClient(c *Config) *github.Client {
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: c.AccessToken},
+	)
+	tc := oauth2.NewClient(oauth2.NoContext, ts)
+	return github.NewClient(tc)
 }
 
 // Delete :
-func (app *App) Delete(ctx context.Context, latestCommit *selfish.Commit, alias string) error {
+func (app *App) Delete(ctx context.Context, latestCommit *Commit, alias string) error {
 	if latestCommit == nil {
 		return errors.Errorf("alias=%q is not found", alias)
 	}
@@ -71,7 +82,7 @@ func (app *App) Delete(ctx context.Context, latestCommit *selfish.Commit, alias 
 		return errors.Wrapf(err, "gist api delete")
 	}
 
-	c := selfish.Commit{ID: gistID, Alias: alias, CreatedAt: time.Now(), Action: "delete"}
+	c := Commit{ID: gistID, Alias: alias, CreatedAt: time.Now(), Action: "delete"}
 	if err := app.CommitHistory.SaveCommit(app.Config.HistFile, &c); err != nil {
 		return errors.Wrap(err, "save commit")
 	}
@@ -80,14 +91,19 @@ func (app *App) Delete(ctx context.Context, latestCommit *selfish.Commit, alias 
 }
 
 // Create :
-func (app *App) Create(ctx context.Context, latestCommit *selfish.Commit, alias string, filenames []string) error {
+func (app *App) Create(ctx context.Context, latestCommit *Commit, alias string, filenames []string) error {
 	action := "create"
-	g, err := app.Client.Create(ctx, filenames)
+
+	gist, err := NewGist(filenames)
+	if err != nil {
+		return err
+	}
+	g, _, err := app.Client.Gists.Create(ctx, gist)
 	if err != nil {
 		return errors.Wrapf(err, "gist api %s", action)
 	}
 
-	c := selfish.NewCommit(g, app.Config.ResolveAlias(alias), action)
+	c := NewCommit(g, app.Config.ResolveAlias(alias), action)
 	if err := app.CommitHistory.SaveCommit(app.Config.HistFile, c); err != nil {
 		return err
 	}
@@ -102,14 +118,19 @@ func (app *App) Create(ctx context.Context, latestCommit *selfish.Commit, alias 
 }
 
 // Update :
-func (app *App) Update(ctx context.Context, latestCommit *selfish.Commit, alias string, filenames []string) error {
+func (app *App) Update(ctx context.Context, latestCommit *Commit, alias string, filenames []string) error {
 	action := "update"
-	g, err := app.Client.Update(ctx, latestCommit, filenames)
+
+	gist, err := NewGist(filenames)
+	if err != nil {
+		return err
+	}
+	g, _, err := app.Client.Gists.Edit(ctx, latestCommit.ID, gist)
 	if err != nil {
 		return errors.Wrapf(err, "gist api %s", action)
 	}
 
-	c := selfish.NewCommit(g, app.Config.ResolveAlias(alias), action)
+	c := NewCommit(g, app.Config.ResolveAlias(alias), action)
 	if err := app.CommitHistory.SaveCommit(app.Config.HistFile, c); err != nil {
 		return err
 	}
