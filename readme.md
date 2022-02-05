@@ -5,7 +5,7 @@ selfish is individual gist client.
 ## install
 
 ```
-go get github.com/podhmo/selfish/cmd/selfish
+go install github.com/podhmo/selfish/cmd/selfish@latest
 ```
 
 ## init setting
@@ -30,7 +30,7 @@ $ cat <<-EOS > /tmp/hello.md
 EOS
 
 # create gist
-$ ./bin/selfish -alias=hello hello.md
+$ ./bin/selfish --alias=hello hello.md
 create success. (id="5639abca377b5c92061248666d38e6aa")
 opening.. "https://gist.github.com/5639abca377b5c92061248666d38e6aa"
 
@@ -40,11 +40,11 @@ hello hello hello
 EOS
 
 # update gist
-$ ./bin/selfish -alias=hello -silent hello.md
+$ ./bin/selfish --alias=hello --silent hello.md
 update success. (id="5639abca377b5c92061248666d38e6aa")
 
 # delete gist
-$ ./bin/selfish -alias=hello -delete
+$ ./bin/selfish --alias=hello --delete
 deleted. (id="5639abca377b5c92061248666d38e6aa")
 ```
 
@@ -52,12 +52,11 @@ deleted. (id="5639abca377b5c92061248666d38e6aa")
 
 ```
 $ ./bin/selfish -h
-Usage of ./bin/selfish:
-  -alias string
-        alias name of uploaded gists
-  -delete
-        delete uploaded gists
-  -silent
-        deactivate webbrowser open, after gists uploading
+Usage of selfish:
+      --alias string   ENV: ALIAS	alias name of uploaded gists
+      --debug          ENV: DEBUG	-
+      --delete         ENV: DELETE	delete uploaded gists
+      --silent         ENV: SILENT	don't open gist pages with browser, after uploading
+pflag: help requested
 ```
 
