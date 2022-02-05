@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/google/go-github/github"
@@ -29,6 +28,8 @@ type Config struct {
 	IsDelete bool     `flag:"delete" help:"delete uploaded gists"`
 	IsSilent bool     `flag:"silent" help:"don't open gist pages with browser, after uploading"`
 	Files    []string `flag:"-"`
+
+	Debug bool `flag:"debug"`
 }
 
 // ResolveAlias :
@@ -162,14 +163,14 @@ func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []st
 		webbrowser.Open(*g.HTMLURL)
 	}
 
-	if ok, _ := strconv.ParseBool(os.Getenv("DEBUG")); ok {
-		FprintJSON(os.Stderr, g)
+	if app.Config.Debug {
+		fprintJSON(os.Stderr, g)
 	}
 	return nil
 }
 
-// FprintJSON is pretty printed json output shorthand.
-func FprintJSON(w io.Writer, data interface{}) {
+// fprintJSON is pretty printed json output shorthand.
+func fprintJSON(w io.Writer, data interface{}) {
 	encoder := json.NewEncoder(w)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(data); err != nil {
@@ -179,5 +180,5 @@ func FprintJSON(w io.Writer, data interface{}) {
 
 // PrintJSON is similar that a relation about fmt.Printf and fmt.Fprintf.
 func PrintJSON(data interface{}) {
-	FprintJSON(os.Stdout, data)
+	fprintJSON(os.Stdout, data)
 }
