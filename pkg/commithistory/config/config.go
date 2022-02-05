@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -13,7 +14,6 @@ import (
 type Config struct {
 	Name     string
 	Profile  string // optional
-	M        MarshalUnmarshaller
 	JoinPath func(profile string, paths ...string) string
 	Default  func(path string) error
 	Dir      func(name string) (string, error)
@@ -34,10 +34,6 @@ func New(name string, ops ...func(*Config)) *Config {
 	if c.JoinPath == nil {
 		c.JoinPath = DefaultJoinPath
 	}
-	if c.M == nil {
-		M := &JSONModule{}
-		c.M = M
-	}
 	return c
 }
 
@@ -45,13 +41,6 @@ func New(name string, ops ...func(*Config)) *Config {
 func WithProfile(profile string) func(*Config) {
 	return func(c *Config) {
 		c.Profile = profile
-	}
-}
-
-// WithMarshalUnmarshaller :
-func WithMarshalUnmarshaller(m MarshalUnmarshaller) func(*Config) {
-	return func(c *Config) {
-		c.M = m
 	}
 }
 
@@ -125,7 +114,9 @@ func (c *Config) Load(name string, ob interface{}) error {
 		}
 	}
 	defer fp.Close()
-	return c.M.Unmarshal(fp, ob)
+
+	decoder := json.NewDecoder(fp)
+	return decoder.Decode(ob)
 }
 
 // Save :
@@ -146,5 +137,6 @@ func (c *Config) Save(name string, ob interface{}) error {
 		return err
 	}
 	defer fp.Close()
-	return c.M.Marshal(fp, ob)
+	encoder := json.NewEncoder(fp)
+	return encoder.Encode(ob)
 }
