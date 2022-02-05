@@ -59,10 +59,10 @@ func run(config *selfish.Config) error {
 
 	files := config.Files
 	if app.IsDelete && config.Alias != "" {
-		return app.Delete(ctx, latestCommit, config.Alias)
+		return app.Delete(ctx, latestCommit)
 	} else if latestCommit == nil {
-		return app.Create(ctx, latestCommit, config.Alias, files)
+		return app.Create(ctx, latestCommit, files)
 	} else {
-		return app.Update(ctx, latestCommit, config.Alias, files)
+		return app.Update(ctx, latestCommit, files)
 	}
 }

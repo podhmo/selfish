@@ -90,7 +90,8 @@ func NewApp(c *Config) (*App, error) {
 }
 
 // Delete :
-func (app *App) Delete(ctx context.Context, latestCommit *Commit, alias string) error {
+func (app *App) Delete(ctx context.Context, latestCommit *Commit) error {
+	alias := app.Alias
 	if latestCommit == nil {
 		return errors.Errorf("alias=%q is not found", alias)
 	}
@@ -109,8 +110,9 @@ func (app *App) Delete(ctx context.Context, latestCommit *Commit, alias string) 
 }
 
 // Create :
-func (app *App) Create(ctx context.Context, latestCommit *Commit, alias string, filenames []string) error {
+func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []string) error {
 	action := "create"
+	alias := app.Alias
 
 	gist, err := NewGist(filenames)
 	if err != nil {
@@ -136,8 +138,9 @@ func (app *App) Create(ctx context.Context, latestCommit *Commit, alias string, 
 }
 
 // Update :
-func (app *App) Update(ctx context.Context, latestCommit *Commit, alias string, filenames []string) error {
+func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []string) error {
 	action := "update"
+	alias := app.Alias
 
 	gist, err := NewGist(filenames)
 	if err != nil {
