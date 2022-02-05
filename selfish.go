@@ -58,21 +58,25 @@ var ErrAccessTokenNotfound = fmt.Errorf("access token is not found")
 func NewApp(c *Config) (*App, error) {
 	ch := commithistory.New("selfish")
 	{
-		profile := c.Profile
-		if err := ch.Load("config.json", &profile); err != nil {
+		if err := ch.Load("config.json", &c.Profile); err != nil {
 			return nil, errors.Wrap(err, "load config")
 		}
-		if profile.AccessToken == "" {
+		if c.Profile.AccessToken == "" {
 			return nil, ErrAccessTokenNotfound
 		}
 
-		if profile.DefaultAlias == "" {
-			profile.DefaultAlias = defaultAlias
+		if c.Profile.DefaultAlias == "" {
+			c.Profile.DefaultAlias = defaultAlias
 		}
-		if profile.HistFile == "" {
-			profile.HistFile = defaultHistFile
+		if c.Profile.HistFile == "" {
+			c.Profile.HistFile = defaultHistFile
 		}
 	}
+
+	// if c.Debug {
+	// 	fmt.Fprintln(os.Stderr, "config loaded")
+	// 	fprintJSON(os.Stderr, c)
+	// }
 
 	var client *github.Client
 	{
