@@ -1,4 +1,4 @@
-package historytest
+package history_test
 
 import (
 	"fmt"
