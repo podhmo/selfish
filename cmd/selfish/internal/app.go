@@ -48,25 +48,6 @@ func NewApp(
 	}
 }
 
-// Run :
-func (app *App) Run(ctx context.Context, files []string) (err error) {
-	var latestCommit *selfish.Commit
-	if app.Alias != "" {
-		latestCommit, err = app.FindLatestCommit(app.Config.HistFile, app.Alias)
-		if err != nil {
-			return err
-		}
-	}
-
-	if app.IsDelete && app.Alias != "" {
-		return app.Delete(ctx, latestCommit, app.Alias)
-	} else if latestCommit == nil {
-		return app.Create(ctx, latestCommit, app.Alias, files)
-	} else {
-		return app.Update(ctx, latestCommit, app.Alias, files)
-	}
-}
-
 // FindLatestCommit :
 func (app *App) FindLatestCommit(filename, alias string) (*selfish.Commit, error) {
 	var c selfish.Commit

@@ -53,7 +53,25 @@ func run(opt *Option) error {
 	`)
 		os.Exit(1)
 	}
+
+	ctx := context.Background()
 	v6 := selfish.NewClient(v5)
-	v7 := internal.NewApp(v4, v6, v5, opt.Silent, opt.Delete, opt.Alias)
-	return v7.Run(context.Background(), opt.Args)
+	app := internal.NewApp(v4, v6, v5, opt.Silent, opt.Delete, opt.Alias)
+
+	var latestCommit *selfish.Commit
+	if app.Alias != "" {
+		latestCommit, err = app.FindLatestCommit(app.Config.HistFile, app.Alias)
+		if err != nil {
+			return err
+		}
+	}
+
+	files := opt.Args
+	if app.IsDelete && app.Alias != "" {
+		return app.Delete(ctx, latestCommit, app.Alias)
+	} else if latestCommit == nil {
+		return app.Create(ctx, latestCommit, app.Alias, files)
+	} else {
+		return app.Update(ctx, latestCommit, app.Alias, files)
+	}
 }
