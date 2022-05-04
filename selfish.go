@@ -101,17 +101,17 @@ func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []st
 		return errors.Wrapf(err, "gist api %s", action)
 	}
 
-	c := &Commit{
+	commit := &Commit{
 		ID:        g.GistID,
 		CreatedAt: g.CreatedAt,
 		Alias:     app.Config.ResolveAlias(alias),
 		Action:    action,
 	}
-	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, c); err != nil {
+	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, commit); err != nil {
 		return errors.Wrap(err, "save commit")
 	}
 
-	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, c.ID)
+	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, commit.ID)
 	if !app.IsSilent && g.HTMLURL != "" {
 		fmt.Fprintf(os.Stderr, "opening.. %q\n", g.HTMLURL)
 		webbrowser.Open(g.HTMLURL)
@@ -130,17 +130,17 @@ func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []st
 		return errors.Wrapf(err, "gist api %s", action)
 	}
 
-	c := &Commit{
+	commit := &Commit{
 		ID:        g.GistID,
 		CreatedAt: g.CreatedAt,
 		Alias:     app.Config.ResolveAlias(alias),
 		Action:    action,
 	}
-	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, c); err != nil {
+	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, commit); err != nil {
 		return err
 	}
 
-	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, c.ID)
+	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, commit.ID)
 	if !app.IsSilent {
 		fmt.Fprintf(os.Stderr, "opening.. %q\n", g.HTMLURL)
 		webbrowser.Open(g.HTMLURL)
