@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	defaultAlias    = "head"
-	defaultHistFile = "selfish.history"
+	defaultAlias               = "head"
+	defaultHistFile            = "selfish.history"
+	defaultRepositoryDirectory = "gists"
 )
 
 // App :
@@ -33,20 +34,7 @@ func NewApp(c *Config) (*App, error) {
 	// 	fprintJSON(os.Stderr, c)
 	// }
 
-	var gh Client
 	var chOptions []func(*commithistory.API)
-	switch c.ClientType {
-	case ClientTypeFake:
-		chOptions = append(chOptions, commithistory.WithDryrun())
-		gh = &fakeClient{W: os.Stderr}
-	case ClientTypeGithub:
-		ts := oauth2.StaticTokenSource(
-			&oauth2.Token{AccessToken: c.Profile.AccessToken},
-		)
-		tc := oauth2.NewClient(oauth2.NoContext, ts)
-		gh = &client{Github: github.NewClient(tc)}
-	}
-
 	ch := commithistory.New("selfish", chOptions...)
 	{
 		if err := ch.Load("config.json", &c.Profile); err != nil {
@@ -62,6 +50,24 @@ func NewApp(c *Config) (*App, error) {
 		if c.Profile.HistFile == "" {
 			c.Profile.HistFile = defaultHistFile
 		}
+		if c.Profile.RepositoryDirectory == "" {
+			c.Profile.RepositoryDirectory = defaultRepositoryDirectory
+		}
+	}
+
+	var gh Client
+	switch c.ClientType {
+	case ClientTypeFake:
+		chOptions = append(chOptions, commithistory.WithDryrun())
+		gh = &fakeClient{W: os.Stderr}
+	case ClientTypeGithub:
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: c.Profile.AccessToken},
+		)
+		tc := oauth2.NewClient(oauth2.NoContext, ts)
+		gh = &client{Github: github.NewClient(tc)}
+	default:
+		panic(c.ClientType)
 	}
 
 	return &App{
