@@ -92,13 +92,13 @@ func (app *App) Delete(ctx context.Context, latestCommit *Commit) error {
 }
 
 // Create :
-func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []string) error {
+func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []string) (*Commit, error) {
 	action := "create"
 	alias := app.Alias
 
 	g, err := app.Client.Create(ctx, filenames)
 	if err != nil {
-		return errors.Wrapf(err, "gist api %s", action)
+		return nil, errors.Wrapf(err, "gist api %s", action)
 	}
 
 	commit := &Commit{
@@ -108,7 +108,7 @@ func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []st
 		Action:    action,
 	}
 	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, commit); err != nil {
-		return errors.Wrap(err, "save commit")
+		return commit, errors.Wrap(err, "save commit")
 	}
 
 	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, commit.ID)
@@ -117,17 +117,17 @@ func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []st
 		webbrowser.Open(g.HTMLURL)
 	}
 	// PrintJSON(g)
-	return nil
+	return commit, nil
 }
 
 // Update :
-func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []string) error {
+func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []string) (*Commit, error) {
 	action := "update"
 	alias := app.Alias
 
 	g, err := app.Client.Update(ctx, latestCommit.ID, filenames)
 	if err != nil {
-		return errors.Wrapf(err, "gist api %s", action)
+		return nil, errors.Wrapf(err, "gist api %s", action)
 	}
 
 	commit := &Commit{
@@ -137,7 +137,7 @@ func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []st
 		Action:    action,
 	}
 	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, commit); err != nil {
-		return err
+		return commit, err
 	}
 
 	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, commit.ID)
@@ -149,5 +149,5 @@ func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []st
 	if app.Config.Debug {
 		fprintJSON(os.Stderr, g)
 	}
-	return nil
+	return commit, nil
 }
