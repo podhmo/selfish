@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/podhmo/selfish"
@@ -57,12 +60,72 @@ func run(config *selfish.Config) error {
 		}
 	}
 
-	files := config.Files
+	scanResult := Scan(config.Files)
+
+	var commit *selfish.Commit
 	if app.IsDelete && config.Alias != "" {
 		return app.Delete(ctx, latestCommit)
 	} else if latestCommit == nil {
-		return app.Create(ctx, latestCommit, files)
+		commit, err = app.Create(ctx, latestCommit, scanResult.TextFiles)
 	} else {
-		return app.Update(ctx, latestCommit, files)
+		commit, err = app.Update(ctx, latestCommit, scanResult.TextFiles)
 	}
+
+	if len(scanResult.BinaryFiles) > 0 && commit != nil {
+		// TODO:
+		fmt.Printf("git clone git@github.com:%s.git\n", commit.ID)
+	}
+	return nil
+}
+
+type ScanResult struct {
+	TextFiles   []string
+	BinaryFiles []string
+}
+
+const (
+	TooLargeFileSize = 5 * (1024 * 1024) // 5Mb
+)
+
+func Scan(files []string) ScanResult {
+	// TODO(podhmo): use io/fs
+	textFiles := make([]string, 0, len(files))
+	binaryFiles := make([]string, 0, len(files))
+
+	for _, fname := range files {
+		finfo, err := os.Stat(fname)
+		if err != nil {
+			log.Printf("ignored for %+v (%q)", err, fname)
+			continue
+		}
+
+		if finfo.Size() > TooLargeFileSize {
+			binaryFiles = append(binaryFiles, fname)
+			continue
+		}
+
+		if err := func(fname string) error {
+			b, err := os.ReadFile(fname)
+			if err != nil {
+				return err
+			}
+			contentType := http.DetectContentType(b)
+			if strings.HasPrefix(contentType, "text/") {
+				textFiles = append(textFiles, fname)
+			} else {
+				binaryFiles = append(binaryFiles, fname)
+			}
+			return nil
+		}(fname); err != nil {
+			log.Printf("ignored for %+v, in detect file type (%q)", err, fname)
+
+		}
+	}
+
+	r := ScanResult{
+		TextFiles:   textFiles,
+		BinaryFiles: binaryFiles,
+	}
+	json.NewEncoder(os.Stderr).Encode(r)
+	return r
 }
