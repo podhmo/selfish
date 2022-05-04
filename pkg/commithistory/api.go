@@ -1,6 +1,8 @@
 package commithistory
 
 import (
+	"log"
+
 	"github.com/podhmo/selfish/pkg/commithistory/history"
 )
 
@@ -23,6 +25,12 @@ func WithProfile(profile string) func(*API) {
 	}
 }
 
+func WithDryrun() func(*API) {
+	return func(c *API) {
+		c.Config.Dryrun = true
+	}
+}
+
 func (c *API) LoadCommit(filename, alias string, ob history.Parsable) error {
 	dirpath, err := c.Dir(c.Name)
 	if err != nil {
@@ -38,6 +46,10 @@ func (c *API) SaveCommit(filename string, ob history.Unparsable) error {
 		return err
 	}
 	path := c.JoinPath(c.Profile, dirpath, filename)
+	if c.Dryrun {
+		log.Printf("save file: %q", path)
+		return nil
+	}
 	return history.SaveFile(path, ob)
 }
 
