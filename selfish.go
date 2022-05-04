@@ -48,8 +48,7 @@ const (
 // App :
 type App struct {
 	CommitHistory *commithistory.API
-	Client        *github.Client
-
+	Client        Client
 	*Config
 }
 
@@ -78,18 +77,18 @@ func NewApp(c *Config) (*App, error) {
 	// 	fprintJSON(os.Stderr, c)
 	// }
 
-	var client *github.Client
+	var gh *github.Client
 	{
 		ts := oauth2.StaticTokenSource(
 			&oauth2.Token{AccessToken: c.Profile.AccessToken},
 		)
 		tc := oauth2.NewClient(oauth2.NoContext, ts)
-		client = github.NewClient(tc)
+		gh = github.NewClient(tc)
 	}
 
 	return &App{
 		CommitHistory: ch,
-		Client:        client,
+		Client:        &client{Github: gh},
 		Config:        c,
 	}, nil
 }
@@ -102,7 +101,7 @@ func (app *App) Delete(ctx context.Context, latestCommit *Commit) error {
 	}
 
 	gistID := latestCommit.ID
-	if _, err := app.Client.Gists.Delete(ctx, gistID); err != nil {
+	if err := app.Client.Delete(ctx, gistID); err != nil {
 		return errors.Wrapf(err, "gist api delete")
 	}
 
@@ -119,24 +118,20 @@ func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []st
 	action := "create"
 	alias := app.Alias
 
-	gist, err := NewGist(filenames)
-	if err != nil {
-		return err
-	}
-	g, _, err := app.Client.Gists.Create(ctx, gist)
+	g, err := app.Client.Create(ctx, filenames)
 	if err != nil {
 		return errors.Wrapf(err, "gist api %s", action)
 	}
 
-	c := NewCommit(g, app.Config.ResolveAlias(alias), action)
+	c := NewCommit(g.raw, app.Config.ResolveAlias(alias), action) // TODO(podhmo): remove *github.Gist
 	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, c); err != nil {
-		return err
+		return errors.Wrap(err, "save commit")
 	}
 
 	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, c.ID)
-	if !app.IsSilent {
-		fmt.Fprintf(os.Stderr, "opening.. %q\n", *g.HTMLURL)
-		webbrowser.Open(*g.HTMLURL)
+	if !app.IsSilent && g.HTMLURL != "" {
+		fmt.Fprintf(os.Stderr, "opening.. %q\n", g.HTMLURL)
+		webbrowser.Open(g.HTMLURL)
 	}
 	// PrintJSON(g)
 	return nil
@@ -147,24 +142,20 @@ func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []st
 	action := "update"
 	alias := app.Alias
 
-	gist, err := NewGist(filenames)
-	if err != nil {
-		return err
-	}
-	g, _, err := app.Client.Gists.Edit(ctx, latestCommit.ID, gist)
+	g, err := app.Client.Update(ctx, latestCommit.ID, filenames)
 	if err != nil {
 		return errors.Wrapf(err, "gist api %s", action)
 	}
 
-	c := NewCommit(g, app.Config.ResolveAlias(alias), action)
+	c := NewCommit(g.raw, app.Config.ResolveAlias(alias), action) // TODO(podhmo): remove *github.Gist
 	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, c); err != nil {
 		return err
 	}
 
 	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, c.ID)
 	if !app.IsSilent {
-		fmt.Fprintf(os.Stderr, "opening.. %q\n", *g.HTMLURL)
-		webbrowser.Open(*g.HTMLURL)
+		fmt.Fprintf(os.Stderr, "opening.. %q\n", g.HTMLURL)
+		webbrowser.Open(g.HTMLURL)
 	}
 
 	if app.Config.Debug {
