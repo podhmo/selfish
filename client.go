@@ -2,6 +2,7 @@ package selfish
 
 import (
 	"context"
+	"io"
 
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
@@ -70,5 +71,34 @@ func (c *client) Delete(ctx context.Context, gistID string) error {
 	if _, err := c.Github.Gists.Delete(ctx, gistID); err != nil {
 		return err
 	}
+	return nil
+}
+
+type fakeClient struct {
+	W io.Writer
+}
+
+func (c *fakeClient) Create(ctx context.Context, filenames []string) (*CreateResult, error) {
+	fprintJSON(c.W, map[string]interface{}{
+		"action": "create",
+		"files":  filenames,
+	})
+	return &CreateResult{raw: &github.Gist{}}, nil
+}
+
+func (c *fakeClient) Update(ctx context.Context, gistID string, filenames []string) (*UpdateResult, error) {
+	fprintJSON(c.W, map[string]interface{}{
+		"action": "update",
+		"files":  filenames,
+		"gistId": gistID,
+	})
+	return &UpdateResult{raw: &github.Gist{}}, nil
+}
+
+func (c *fakeClient) Delete(ctx context.Context, gistID string) error {
+	fprintJSON(c.W, map[string]interface{}{
+		"action": "delete",
+		"gistId": gistID,
+	})
 	return nil
 }

@@ -2,10 +2,7 @@ package selfish
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"log"
 	"os"
 	"time"
 
@@ -31,7 +28,26 @@ type App struct {
 var ErrAccessTokenNotfound = fmt.Errorf("access token is not found")
 
 func NewApp(c *Config) (*App, error) {
-	ch := commithistory.New("selfish")
+	// if c.Debug {
+	// 	fmt.Fprintln(os.Stderr, "config loaded")
+	// 	fprintJSON(os.Stderr, c)
+	// }
+
+	var gh Client
+	var chOptions []func(*commithistory.API)
+	switch c.ClientType {
+	case ClientTypeFake:
+		chOptions = append(chOptions, commithistory.WithDryrun())
+		gh = &fakeClient{W: os.Stderr}
+	case ClientTypeGithub:
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: c.Profile.AccessToken},
+		)
+		tc := oauth2.NewClient(oauth2.NoContext, ts)
+		gh = &client{Github: github.NewClient(tc)}
+	}
+
+	ch := commithistory.New("selfish", chOptions...)
 	{
 		if err := ch.Load("config.json", &c.Profile); err != nil {
 			return nil, errors.Wrap(err, "load config")
@@ -48,23 +64,9 @@ func NewApp(c *Config) (*App, error) {
 		}
 	}
 
-	// if c.Debug {
-	// 	fmt.Fprintln(os.Stderr, "config loaded")
-	// 	fprintJSON(os.Stderr, c)
-	// }
-
-	var gh *github.Client
-	{
-		ts := oauth2.StaticTokenSource(
-			&oauth2.Token{AccessToken: c.Profile.AccessToken},
-		)
-		tc := oauth2.NewClient(oauth2.NoContext, ts)
-		gh = github.NewClient(tc)
-	}
-
 	return &App{
 		CommitHistory: ch,
-		Client:        &client{Github: gh},
+		Client:        gh,
 		Config:        c,
 	}, nil
 }
@@ -138,18 +140,4 @@ func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []st
 		fprintJSON(os.Stderr, g)
 	}
 	return nil
-}
-
-// fprintJSON is pretty printed json output shorthand.
-func fprintJSON(w io.Writer, data interface{}) {
-	encoder := json.NewEncoder(w)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(data); err != nil {
-		log.Fatal(err)
-	}
-}
-
-// PrintJSON is similar that a relation about fmt.Printf and fmt.Fprintf.
-func PrintJSON(data interface{}) {
-	fprintJSON(os.Stdout, data)
 }
