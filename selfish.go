@@ -101,7 +101,12 @@ func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []st
 		return errors.Wrapf(err, "gist api %s", action)
 	}
 
-	c := NewCommit(g.raw, app.Config.ResolveAlias(alias), action) // TODO(podhmo): remove *github.Gist
+	c := &Commit{
+		ID:        g.GistID,
+		CreatedAt: g.CreatedAt,
+		Alias:     app.Config.ResolveAlias(alias),
+		Action:    action,
+	}
 	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, c); err != nil {
 		return errors.Wrap(err, "save commit")
 	}
@@ -125,7 +130,12 @@ func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []st
 		return errors.Wrapf(err, "gist api %s", action)
 	}
 
-	c := NewCommit(g.raw, app.Config.ResolveAlias(alias), action) // TODO(podhmo): remove *github.Gist
+	c := &Commit{
+		ID:        g.GistID,
+		CreatedAt: g.CreatedAt,
+		Alias:     app.Config.ResolveAlias(alias),
+		Action:    action,
+	}
 	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, c); err != nil {
 		return err
 	}

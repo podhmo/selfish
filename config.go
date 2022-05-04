@@ -67,7 +67,7 @@ func (v *ClientType) Set(value string) error {
 	if v == nil {
 		*v = ClientTypeGithub
 	} else {
-		*v = ClientType(strings.ToUpper(value))
+		*v = ClientType(strings.ToLower(value))
 	}
 	return v.Validate()
 }

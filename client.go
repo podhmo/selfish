@@ -3,6 +3,8 @@ package selfish
 import (
 	"context"
 	"io"
+	"log"
+	"time"
 
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
@@ -19,8 +21,10 @@ type client struct {
 }
 
 type CreateResult struct {
-	HTMLURL string
-	raw     *github.Gist
+	GistID    string
+	CreatedAt time.Time
+	HTMLURL   string
+	raw       *github.Gist
 }
 
 func (c *client) Create(ctx context.Context, filenames []string) (*CreateResult, error) {
@@ -37,15 +41,27 @@ func (c *client) Create(ctx context.Context, filenames []string) (*CreateResult,
 	if g.HTMLURL != nil {
 		htmlURL = *g.HTMLURL
 	}
+	var createdAt time.Time
+	if g.CreatedAt != nil {
+		createdAt = *g.CreatedAt
+	}
+	var gistID string
+	if g.ID != nil {
+		gistID = *g.ID
+	}
 	return &CreateResult{
-		raw:     g,
-		HTMLURL: htmlURL,
+		GistID:    gistID,
+		CreatedAt: createdAt,
+		HTMLURL:   htmlURL,
+		raw:       g,
 	}, nil
 }
 
 type UpdateResult struct {
-	HTMLURL string
-	raw     *github.Gist
+	GistID    string
+	CreatedAt time.Time
+	HTMLURL   string
+	raw       *github.Gist
 }
 
 func (c *client) Update(ctx context.Context, gistID string, filenames []string) (*UpdateResult, error) {
@@ -61,9 +77,20 @@ func (c *client) Update(ctx context.Context, gistID string, filenames []string) 
 	if g.HTMLURL != nil {
 		htmlURL = *g.HTMLURL
 	}
+	var createdAt time.Time
+	if g.CreatedAt != nil {
+		createdAt = *g.CreatedAt
+	}
+	if g.ID != nil {
+		if *g.ID != gistID {
+			log.Printf("WARN: gistId is mismatch %q != %q", gistID, *g.ID)
+		}
+	}
 	return &UpdateResult{
-		raw:     g,
-		HTMLURL: htmlURL,
+		GistID:    gistID,
+		CreatedAt: createdAt,
+		HTMLURL:   htmlURL,
+		raw:       g,
 	}, nil
 }
 
@@ -92,7 +119,7 @@ func (c *fakeClient) Update(ctx context.Context, gistID string, filenames []stri
 		"files":  filenames,
 		"gistId": gistID,
 	})
-	return &UpdateResult{raw: &github.Gist{}}, nil
+	return &UpdateResult{raw: &github.Gist{}, GistID: gistID}, nil
 }
 
 func (c *fakeClient) Delete(ctx context.Context, gistID string) error {
