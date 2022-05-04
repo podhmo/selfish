@@ -12,8 +12,10 @@ import (
 
 // Config :
 type Config struct {
-	Name     string
-	Profile  string // optional
+	Name    string
+	Profile string // optional
+	Dryrun  bool
+
 	JoinPath func(profile string, paths ...string) string
 	Default  func(path string) error
 	Dir      func(name string) (string, error)

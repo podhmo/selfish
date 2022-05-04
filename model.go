@@ -14,16 +14,6 @@ import (
 
 type Commit = commithistory.Commit
 
-// NewCommit creates and initializes a new Commit object.
-func NewCommit(g *github.Gist, alias string, action string) *Commit {
-	return &Commit{
-		ID:        *g.ID,
-		CreatedAt: *g.CreatedAt,
-		Alias:     alias,
-		Action:    action,
-	}
-}
-
 // NewGist is shorthand of github.Gist object creation
 func NewGist(filenames []string) (*github.Gist, error) {
 	public := true

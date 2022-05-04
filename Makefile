@@ -1,14 +1,16 @@
 default:
 	make build
-	make run
+	make dry-run
 
 build:
-	(cd cmd/selfish && go build -o ../../bin/selfish)
+	mkdir -p bin
+	go build -o bin/selfish ./cmd/selfish
 
 test:
+	go vet ./...
 	go test -cover
 
-vendor-update:
-	dep ensure --update
+dry-run: 
+	go run ./cmd/selfish --client fake _examples/*
 
-.PHONY: run default build test
+.PHONY: dry-run default build test

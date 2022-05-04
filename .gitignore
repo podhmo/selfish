@@ -6,3 +6,5 @@ selfish.config
 lib
 pyvenv.cfg
 __pycache__
+
+_sandbox

@@ -2,10 +2,7 @@ package selfish
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"log"
 	"os"
 	"time"
 
@@ -16,30 +13,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// Config is mapping object for application config
-type Config struct {
-	Profile struct {
-		DefaultAlias string `json:"default_alias"`
-		AccessToken  string `json:"access_token"`
-		HistFile     string `json:"hist_file"`
-	} `flag:"-"`
-
-	Alias    string   `flag:"alias" help:"alias name of uploaded gists"`
-	IsDelete bool     `flag:"delete" help:"delete uploaded gists"`
-	IsSilent bool     `flag:"silent" help:"don't open gist pages with browser, after uploading"`
-	Files    []string `flag:"-"`
-
-	Debug bool `flag:"debug"`
-}
-
-// ResolveAlias :
-func (c *Config) ResolveAlias(alias string) string {
-	if alias == "" {
-		return c.Profile.DefaultAlias
-	}
-	return alias
-}
-
 const (
 	defaultAlias    = "head"
 	defaultHistFile = "selfish.history"
@@ -48,15 +21,33 @@ const (
 // App :
 type App struct {
 	CommitHistory *commithistory.API
-	Client        *github.Client
-
-	*Config
+	Client        Client
+	*Config       // TODO(podhmo): stop embedded
 }
 
 var ErrAccessTokenNotfound = fmt.Errorf("access token is not found")
 
 func NewApp(c *Config) (*App, error) {
-	ch := commithistory.New("selfish")
+	// if c.Debug {
+	// 	fmt.Fprintln(os.Stderr, "config loaded")
+	// 	fprintJSON(os.Stderr, c)
+	// }
+
+	var gh Client
+	var chOptions []func(*commithistory.API)
+	switch c.ClientType {
+	case ClientTypeFake:
+		chOptions = append(chOptions, commithistory.WithDryrun())
+		gh = &fakeClient{W: os.Stderr}
+	case ClientTypeGithub:
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: c.Profile.AccessToken},
+		)
+		tc := oauth2.NewClient(oauth2.NoContext, ts)
+		gh = &client{Github: github.NewClient(tc)}
+	}
+
+	ch := commithistory.New("selfish", chOptions...)
 	{
 		if err := ch.Load("config.json", &c.Profile); err != nil {
 			return nil, errors.Wrap(err, "load config")
@@ -73,23 +64,9 @@ func NewApp(c *Config) (*App, error) {
 		}
 	}
 
-	// if c.Debug {
-	// 	fmt.Fprintln(os.Stderr, "config loaded")
-	// 	fprintJSON(os.Stderr, c)
-	// }
-
-	var client *github.Client
-	{
-		ts := oauth2.StaticTokenSource(
-			&oauth2.Token{AccessToken: c.Profile.AccessToken},
-		)
-		tc := oauth2.NewClient(oauth2.NoContext, ts)
-		client = github.NewClient(tc)
-	}
-
 	return &App{
 		CommitHistory: ch,
-		Client:        client,
+		Client:        gh,
 		Config:        c,
 	}, nil
 }
@@ -102,7 +79,7 @@ func (app *App) Delete(ctx context.Context, latestCommit *Commit) error {
 	}
 
 	gistID := latestCommit.ID
-	if _, err := app.Client.Gists.Delete(ctx, gistID); err != nil {
+	if err := app.Client.Delete(ctx, gistID); err != nil {
 		return errors.Wrapf(err, "gist api delete")
 	}
 
@@ -119,24 +96,25 @@ func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []st
 	action := "create"
 	alias := app.Alias
 
-	gist, err := NewGist(filenames)
-	if err != nil {
-		return err
-	}
-	g, _, err := app.Client.Gists.Create(ctx, gist)
+	g, err := app.Client.Create(ctx, filenames)
 	if err != nil {
 		return errors.Wrapf(err, "gist api %s", action)
 	}
 
-	c := NewCommit(g, app.Config.ResolveAlias(alias), action)
-	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, c); err != nil {
-		return err
+	commit := &Commit{
+		ID:        g.GistID,
+		CreatedAt: g.CreatedAt,
+		Alias:     app.Config.ResolveAlias(alias),
+		Action:    action,
+	}
+	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, commit); err != nil {
+		return errors.Wrap(err, "save commit")
 	}
 
-	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, c.ID)
-	if !app.IsSilent {
-		fmt.Fprintf(os.Stderr, "opening.. %q\n", *g.HTMLURL)
-		webbrowser.Open(*g.HTMLURL)
+	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, commit.ID)
+	if !app.IsSilent && g.HTMLURL != "" {
+		fmt.Fprintf(os.Stderr, "opening.. %q\n", g.HTMLURL)
+		webbrowser.Open(g.HTMLURL)
 	}
 	// PrintJSON(g)
 	return nil
@@ -147,42 +125,29 @@ func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []st
 	action := "update"
 	alias := app.Alias
 
-	gist, err := NewGist(filenames)
-	if err != nil {
-		return err
-	}
-	g, _, err := app.Client.Gists.Edit(ctx, latestCommit.ID, gist)
+	g, err := app.Client.Update(ctx, latestCommit.ID, filenames)
 	if err != nil {
 		return errors.Wrapf(err, "gist api %s", action)
 	}
 
-	c := NewCommit(g, app.Config.ResolveAlias(alias), action)
-	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, c); err != nil {
+	commit := &Commit{
+		ID:        g.GistID,
+		CreatedAt: g.CreatedAt,
+		Alias:     app.Config.ResolveAlias(alias),
+		Action:    action,
+	}
+	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, commit); err != nil {
 		return err
 	}
 
-	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, c.ID)
+	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, commit.ID)
 	if !app.IsSilent {
-		fmt.Fprintf(os.Stderr, "opening.. %q\n", *g.HTMLURL)
-		webbrowser.Open(*g.HTMLURL)
+		fmt.Fprintf(os.Stderr, "opening.. %q\n", g.HTMLURL)
+		webbrowser.Open(g.HTMLURL)
 	}
 
 	if app.Config.Debug {
 		fprintJSON(os.Stderr, g)
 	}
 	return nil
-}
-
-// fprintJSON is pretty printed json output shorthand.
-func fprintJSON(w io.Writer, data interface{}) {
-	encoder := json.NewEncoder(w)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(data); err != nil {
-		log.Fatal(err)
-	}
-}
-
-// PrintJSON is similar that a relation about fmt.Printf and fmt.Fprintf.
-func PrintJSON(data interface{}) {
-	fprintJSON(os.Stdout, data)
 }
