@@ -16,30 +16,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// Config is mapping object for application config
-type Config struct {
-	Profile struct {
-		DefaultAlias string `json:"default_alias"`
-		AccessToken  string `json:"access_token"`
-		HistFile     string `json:"hist_file"`
-	} `flag:"-"`
-
-	Alias    string   `flag:"alias" help:"alias name of uploaded gists"`
-	IsDelete bool     `flag:"delete" help:"delete uploaded gists"`
-	IsSilent bool     `flag:"silent" help:"don't open gist pages with browser, after uploading"`
-	Files    []string `flag:"-"`
-
-	Debug bool `flag:"debug"`
-}
-
-// ResolveAlias :
-func (c *Config) ResolveAlias(alias string) string {
-	if alias == "" {
-		return c.Profile.DefaultAlias
-	}
-	return alias
-}
-
 const (
 	defaultAlias    = "head"
 	defaultHistFile = "selfish.history"
@@ -49,7 +25,7 @@ const (
 type App struct {
 	CommitHistory *commithistory.API
 	Client        Client
-	*Config
+	*Config       // TODO(podhmo): stop embedded
 }
 
 var ErrAccessTokenNotfound = fmt.Errorf("access token is not found")
