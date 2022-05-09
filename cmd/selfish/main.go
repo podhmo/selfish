@@ -73,6 +73,9 @@ func run(config *selfish.Config) error {
 		return app.Delete(ctx, latestCommit)
 	} else if latestCommit == nil {
 		commit, err = app.Create(ctx, latestCommit, scanResult.TextFiles)
+	} else if len(scanResult.TextFiles) == 0 {
+		log.Println("empty, skipped")
+		commit = latestCommit
 	} else {
 		commit, err = app.Update(ctx, latestCommit, scanResult.TextFiles)
 	}
