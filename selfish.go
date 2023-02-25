@@ -35,6 +35,9 @@ func NewApp(c *Config) (*App, error) {
 	// }
 
 	var chOptions []func(*commithistory.API)
+	if c.ClientType == ClientTypeFake {
+		chOptions = append(chOptions, commithistory.WithDryrun())
+	}
 	ch := commithistory.New("selfish", chOptions...)
 	{
 		if err := ch.Load("config.json", &c.Profile); err != nil {
@@ -58,7 +61,6 @@ func NewApp(c *Config) (*App, error) {
 	var gh Client
 	switch c.ClientType {
 	case ClientTypeFake:
-		chOptions = append(chOptions, commithistory.WithDryrun())
 		gh = &fakeClient{W: os.Stderr}
 	case ClientTypeGithub:
 		ts := oauth2.StaticTokenSource(
