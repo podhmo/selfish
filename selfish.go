@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v50/github"
 	"github.com/pkg/errors"
 	"github.com/podhmo/selfish/pkg/commithistory"
 	"github.com/toqueteos/webbrowser"
@@ -101,7 +101,6 @@ func (app *App) Delete(ctx context.Context, latestCommit *Commit) error {
 func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []string) (*Commit, error) {
 	action := "create"
 	alias := app.Alias
-
 	g, err := app.Client.Create(ctx, filenames)
 	if err != nil {
 		return nil, errors.Wrapf(err, "gist api %s", action)
