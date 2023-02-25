@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v50/github"
 	"github.com/pkg/errors"
 )
 
@@ -43,7 +43,7 @@ func (c *client) Create(ctx context.Context, filenames []string) (*CreateResult,
 	}
 	var createdAt time.Time
 	if g.CreatedAt != nil {
-		createdAt = *g.CreatedAt
+		createdAt = g.CreatedAt.Time
 	}
 	var gistID string
 	if g.ID != nil {
@@ -79,7 +79,7 @@ func (c *client) Update(ctx context.Context, gistID string, filenames []string) 
 	}
 	var createdAt time.Time
 	if g.CreatedAt != nil {
-		createdAt = *g.CreatedAt
+		createdAt = g.CreatedAt.Time
 	}
 	if g.ID != nil {
 		if *g.ID != gistID {

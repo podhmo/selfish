@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v50/github"
 	"github.com/pkg/errors"
 	"github.com/podhmo/selfish/pkg/commithistory"
 	"github.com/toqueteos/webbrowser"
@@ -35,6 +35,9 @@ func NewApp(c *Config) (*App, error) {
 	// }
 
 	var chOptions []func(*commithistory.API)
+	if c.ClientType == ClientTypeFake {
+		chOptions = append(chOptions, commithistory.WithDryrun())
+	}
 	ch := commithistory.New("selfish", chOptions...)
 	{
 		if err := ch.Load("config.json", &c.Profile); err != nil {
@@ -58,7 +61,6 @@ func NewApp(c *Config) (*App, error) {
 	var gh Client
 	switch c.ClientType {
 	case ClientTypeFake:
-		chOptions = append(chOptions, commithistory.WithDryrun())
 		gh = &fakeClient{W: os.Stderr}
 	case ClientTypeGithub:
 		ts := oauth2.StaticTokenSource(
@@ -67,7 +69,7 @@ func NewApp(c *Config) (*App, error) {
 		tc := oauth2.NewClient(oauth2.NoContext, ts)
 		gh = &client{Github: github.NewClient(tc)}
 	default:
-		panic(c.ClientType)
+		return nil, fmt.Errorf("unexpected client type %q", c.ClientType)
 	}
 
 	return &App{
@@ -101,7 +103,6 @@ func (app *App) Delete(ctx context.Context, latestCommit *Commit) error {
 func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []string) (*Commit, error) {
 	action := "create"
 	alias := app.Alias
-
 	g, err := app.Client.Create(ctx, filenames)
 	if err != nil {
 		return nil, errors.Wrapf(err, "gist api %s", action)

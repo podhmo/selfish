@@ -7,7 +7,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v50/github"
 	"github.com/pkg/errors"
 	"github.com/podhmo/selfish/pkg/commithistory"
 )

@@ -13,13 +13,13 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/podhmo/flagstruct"
 	"github.com/podhmo/selfish"
-	"github.com/podhmo/structflag"
 )
 
 func main() {
 	config := &selfish.Config{ClientType: selfish.ClientTypeGithub}
-	b := structflag.NewBuilder()
+	b := flagstruct.NewBuilder()
 	fs := b.Build(config)
 	if err := fs.Parse(os.Args[1:]); err != nil {
 		fs.Usage()
