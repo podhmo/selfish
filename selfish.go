@@ -69,7 +69,7 @@ func NewApp(c *Config) (*App, error) {
 		tc := oauth2.NewClient(oauth2.NoContext, ts)
 		gh = &client{Github: github.NewClient(tc)}
 	default:
-		panic(c.ClientType)
+		return nil, fmt.Errorf("unexpected client type %q", c.ClientType)
 	}
 
 	return &App{
