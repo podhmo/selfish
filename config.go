@@ -9,9 +9,10 @@ import (
 // Config is mapping object for application config
 type Config struct {
 	Profile struct {
-		DefaultAlias string `json:"default_alias"`
-		AccessToken  string `json:"access_token"`
-		HistFile     string `json:"hist_file"`
+		DefaultAlias        string `json:"default_alias"`
+		AccessToken         string `json:"access_token"`
+		HistFile            string `json:"hist_file"`
+		RepositoryDirectory string `json:"repositoryDirectory"`
 	} `flag:"-"`
 
 	Alias      string     `flag:"alias" help:"alias name of uploaded gists"`

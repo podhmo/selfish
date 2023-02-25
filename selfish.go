@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	defaultAlias    = "head"
-	defaultHistFile = "selfish.history"
+	defaultAlias               = "head"
+	defaultHistFile            = "selfish.history"
+	defaultRepositoryDirectory = "gists"
 )
 
 // App :
@@ -33,20 +34,7 @@ func NewApp(c *Config) (*App, error) {
 	// 	fprintJSON(os.Stderr, c)
 	// }
 
-	var gh Client
 	var chOptions []func(*commithistory.API)
-	switch c.ClientType {
-	case ClientTypeFake:
-		chOptions = append(chOptions, commithistory.WithDryrun())
-		gh = &fakeClient{W: os.Stderr}
-	case ClientTypeGithub:
-		ts := oauth2.StaticTokenSource(
-			&oauth2.Token{AccessToken: c.Profile.AccessToken},
-		)
-		tc := oauth2.NewClient(oauth2.NoContext, ts)
-		gh = &client{Github: github.NewClient(tc)}
-	}
-
 	ch := commithistory.New("selfish", chOptions...)
 	{
 		if err := ch.Load("config.json", &c.Profile); err != nil {
@@ -62,6 +50,24 @@ func NewApp(c *Config) (*App, error) {
 		if c.Profile.HistFile == "" {
 			c.Profile.HistFile = defaultHistFile
 		}
+		if c.Profile.RepositoryDirectory == "" {
+			c.Profile.RepositoryDirectory = defaultRepositoryDirectory
+		}
+	}
+
+	var gh Client
+	switch c.ClientType {
+	case ClientTypeFake:
+		chOptions = append(chOptions, commithistory.WithDryrun())
+		gh = &fakeClient{W: os.Stderr}
+	case ClientTypeGithub:
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: c.Profile.AccessToken},
+		)
+		tc := oauth2.NewClient(oauth2.NoContext, ts)
+		gh = &client{Github: github.NewClient(tc)}
+	default:
+		panic(c.ClientType)
 	}
 
 	return &App{
@@ -92,13 +98,13 @@ func (app *App) Delete(ctx context.Context, latestCommit *Commit) error {
 }
 
 // Create :
-func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []string) error {
+func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []string) (*Commit, error) {
 	action := "create"
 	alias := app.Alias
 
 	g, err := app.Client.Create(ctx, filenames)
 	if err != nil {
-		return errors.Wrapf(err, "gist api %s", action)
+		return nil, errors.Wrapf(err, "gist api %s", action)
 	}
 
 	commit := &Commit{
@@ -108,7 +114,7 @@ func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []st
 		Action:    action,
 	}
 	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, commit); err != nil {
-		return errors.Wrap(err, "save commit")
+		return commit, errors.Wrap(err, "save commit")
 	}
 
 	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, commit.ID)
@@ -117,17 +123,17 @@ func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []st
 		webbrowser.Open(g.HTMLURL)
 	}
 	// PrintJSON(g)
-	return nil
+	return commit, nil
 }
 
 // Update :
-func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []string) error {
+func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []string) (*Commit, error) {
 	action := "update"
 	alias := app.Alias
 
 	g, err := app.Client.Update(ctx, latestCommit.ID, filenames)
 	if err != nil {
-		return errors.Wrapf(err, "gist api %s", action)
+		return nil, errors.Wrapf(err, "gist api %s", action)
 	}
 
 	commit := &Commit{
@@ -137,7 +143,7 @@ func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []st
 		Action:    action,
 	}
 	if err := app.CommitHistory.SaveCommit(app.Config.Profile.HistFile, commit); err != nil {
-		return err
+		return commit, err
 	}
 
 	fmt.Fprintf(os.Stderr, "%s success. (id=%q)\n", action, commit.ID)
@@ -149,5 +155,5 @@ func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []st
 	if app.Config.Debug {
 		fprintJSON(os.Stderr, g)
 	}
-	return nil
+	return commit, nil
 }

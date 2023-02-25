@@ -65,14 +65,22 @@ func DefaultConfigDir(name string) (string, error) {
 	return filepath.Join(u.HomeDir, ".config", name), nil
 }
 
-// Load :
-func (c *Config) Load(name string, ob interface{}) error {
+func (c *Config) FilePath(name string) (string, error) {
 	d, err := c.Dir(c.Name)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	path := c.JoinPath(c.Profile, d, name)
+	return path, nil
+}
+
+// Load :
+func (c *Config) Load(name string, ob interface{}) error {
+	path, err := c.FilePath(name)
+	if err != nil {
+		return err
+	}
 	log.Printf("load. %q\n", path)
 
 	var fp io.ReadCloser
@@ -98,12 +106,10 @@ func (c *Config) Load(name string, ob interface{}) error {
 
 // Save :
 func (c *Config) Save(name string, ob interface{}) error {
-	d, err := c.Dir(c.Name)
+	path, err := c.FilePath(name)
 	if err != nil {
 		return err
 	}
-
-	path := c.JoinPath(c.Profile, d, name)
 	log.Printf("save. %q\n", path)
 
 	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
