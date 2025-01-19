@@ -2,7 +2,7 @@ package internal
 
 import (
 	"fmt"
-	"io/ioutil"
+
 	"log"
 	"os"
 	"path"
@@ -64,7 +64,7 @@ func NewGistFile(filename string) (*github.GistFile, error) {
 		return nil, fmt.Errorf("empty file")
 	}
 
-	byte, err := ioutil.ReadFile(filename)
+	byte, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, errors.Wrap(err, "read all")
 	}
