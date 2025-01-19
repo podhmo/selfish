@@ -1,4 +1,4 @@
-package selfish
+package internal
 
 import (
 	"context"
