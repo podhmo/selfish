@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/spf13/pflag"
 )
 
 // Config is mapping object for application config
@@ -77,3 +79,5 @@ func (v *ClientType) Set(value string) error {
 func (v *ClientType) Type() string {
 	return "ClientType"
 }
+
+var _ pflag.Value = (*ClientType)(nil)
