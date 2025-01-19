@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/go-github/v68/github"
@@ -29,7 +30,7 @@ func NewGist(filenames []string) (*github.Gist, error) {
 		}
 
 		// guess title, first heading of markdown. (This code using wasteful memory, but it's ok)
-		if (strings.ToLower(filename)) == "readme.md" && gistfile.Content != nil {
+		if (strings.ToLower(filepath.Base(filename))) == "readme.md" && gistfile.Content != nil {
 			text := strings.TrimLeft(*gistfile.Content, "\n\t  ")
 			for _, line := range strings.Split(text, "\n") {
 				if strings.HasPrefix(line, "# ") {
@@ -39,7 +40,7 @@ func NewGist(filenames []string) (*github.Gist, error) {
 			}
 		}
 
-		k := github.GistFilename(path.Base(filename))
+		k := github.GistFilename(filepath.Base(filename))
 		files[k] = *gistfile
 	}
 

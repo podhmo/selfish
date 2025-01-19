@@ -2,6 +2,7 @@ package internal_test
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/podhmo/selfish/internal"
@@ -30,7 +31,11 @@ func TestNewGist(t *testing.T) {
 		},
 		{
 			name:      "readme with title",
-			filenames: []string{"testdata/Readme.md"},
+			filenames: []string{"testdata/readme.md"},
+		},
+		{
+			name:      "readme with title, case insensitive",
+			filenames: []string{"testdata/README.md"},
 		},
 	}
 
@@ -42,7 +47,7 @@ func TestNewGist(t *testing.T) {
 				return
 			}
 
-			if slices.Contains(tt.filenames, "Readme.md") {
+			if slices.ContainsFunc(tt.filenames, func(s string) bool { return strings.ToLower(s) == "testdata/readme.md" }) {
 				if gist.Description == nil {
 					t.Errorf("NewGist() description is nil")
 					return
