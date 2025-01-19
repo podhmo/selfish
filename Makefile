@@ -8,7 +8,7 @@ build:
 
 test:
 	go vet ./...
-	go test -cover
+	go test -cover ./...
 
 dry-run: 
 	go run ./cmd/selfish --client fake _examples/*
