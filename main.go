@@ -14,11 +14,11 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/podhmo/flagstruct"
-	"github.com/podhmo/selfish"
+	"github.com/podhmo/selfish/internal"
 )
 
 func main() {
-	config := &selfish.Config{ClientType: selfish.ClientTypeGithub}
+	config := &internal.Config{ClientType: internal.ClientTypeGithub}
 	b := flagstruct.NewBuilder()
 	fs := b.Build(config)
 	if err := fs.Parse(os.Args[1:]); err != nil {
@@ -32,11 +32,11 @@ func main() {
 	}
 }
 
-func run(config *selfish.Config) error {
+func run(config *internal.Config) error {
 	ctx := context.Background()
-	app, err := selfish.NewApp(config)
+	app, err := internal.NewApp(config)
 	if err != nil {
-		if err == selfish.ErrAccessTokenNotfound {
+		if err == internal.ErrAccessTokenNotfound {
 			fmt.Fprintln(os.Stderr, "if config file is not found. then")
 			fmt.Println(`
 		mkdir -p ~/.config/selfish
@@ -51,9 +51,9 @@ func run(config *selfish.Config) error {
 		return err
 	}
 
-	var latestCommit *selfish.Commit
+	var latestCommit *internal.Commit
 	if config.Alias != "" {
-		var c selfish.Commit
+		var c internal.Commit
 		if err := app.CommitHistory.LoadCommit(app.Config.Profile.HistFile, config.Alias, &c); err != nil {
 			if !app.CommitHistory.IsNotFound(err) {
 				return errors.Wrap(err, "load commit")
@@ -68,7 +68,7 @@ func run(config *selfish.Config) error {
 		json.NewEncoder(os.Stderr).Encode(scanResult)
 	}
 
-	var commit *selfish.Commit
+	var commit *internal.Commit
 	if app.IsDelete && config.Alias != "" {
 		return app.Delete(ctx, latestCommit)
 	} else if latestCommit == nil {
