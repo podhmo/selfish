@@ -5,7 +5,7 @@ selfish is individual gist client.
 ## install
 
 ```
-go install github.com/podhmo/selfish/cmd/selfish@latest
+go install github.com/podhmo/selfish@latest
 ```
 
 ## init setting
