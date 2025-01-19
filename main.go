@@ -182,7 +182,7 @@ func run(config *internal.Config) error {
 	return nil
 }
 
-type ScanResult struct {
+type scanResult struct {
 	TextFiles   []string
 	BinaryFiles []string
 }
@@ -191,7 +191,7 @@ const (
 	TooLargeFileSize = 5 * (1024 * 1024) // 5Mb
 )
 
-func ScanFiles(files []string) ScanResult {
+func ScanFiles(files []string) scanResult {
 	// TODO(podhmo): use io/fs
 	textFiles := make([]string, 0, len(files))
 	binaryFiles := make([]string, 0, len(files))
@@ -226,7 +226,7 @@ func ScanFiles(files []string) ScanResult {
 		}
 	}
 
-	r := ScanResult{
+	r := scanResult{
 		TextFiles:   textFiles,
 		BinaryFiles: binaryFiles,
 	}
