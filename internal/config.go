@@ -3,9 +3,6 @@ package internal
 import (
 	"fmt"
 	"reflect"
-	"strings"
-
-	"github.com/spf13/pflag"
 )
 
 // Config is mapping object for application config
@@ -20,7 +17,7 @@ type Config struct {
 	Alias      string     `flag:"alias" help:"alias name of uploaded gists"`
 	IsDelete   bool       `flag:"delete" help:"delete uploaded gists"`
 	IsSilent   bool       `flag:"silent" help:"don't open gist pages with browser, after uploading"`
-	ClientType ClientType `flag:"client"`
+	ClientType ClientType `flag:"client" help:"if =fake, doesn't request {github, fake}"`
 	Files      []string   `flag:"-"`
 
 	Debug bool `flag:"debug"`
@@ -52,32 +49,13 @@ func (v ClientType) Validate() error {
 	}
 }
 
-// for flagstruct.HasHelpText
-func (v ClientType) HelpText() string {
-	return "- client is the option for debug {github, fake}"
-}
+// for flags.TextVar
 
-// for pflag.Value
-func (v *ClientType) String() string {
-	if v == nil {
-		return "<nil>"
-	}
-	return string(*v)
-}
-
-// for pflag.Value
-func (v *ClientType) Set(value string) error {
-	if v == nil {
-		*v = ClientTypeGithub
-	} else {
-		*v = ClientType(strings.ToLower(value))
-	}
+func (v *ClientType) UnmarshalText(data []byte) error {
+	*v = ClientType(data)
 	return v.Validate()
 }
 
-// for pflag.Value
-func (v *ClientType) Type() string {
-	return "ClientType"
+func (v ClientType) MarshalText() ([]byte, error) {
+	return []byte(v), nil
 }
-
-var _ pflag.Value = (*ClientType)(nil)
