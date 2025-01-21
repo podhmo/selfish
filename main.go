@@ -114,17 +114,31 @@ func run(config *internal.Config) error {
 			log.Println("clone repository; git clone", repoURL)
 			cmd := exec.Command("git", "clone", repoURL)
 			cmd.Dir = rootDir
+			cmd.Stderr = os.Stderr
 			if err := cmd.Run(); err != nil {
 				log.Printf("WARN: handling binaries is failed. in git clone. %+v\nignored.", err)
 				return nil
 			}
 		}
 
+		log.Printf("remove dirty files; cd %s && git reset --hard HEAD", repoDir)
+		{
+			cmd := exec.Command("git", "reset", "--hard", "HEAD")
+			cmd.Dir = repoDir
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				log.Printf("git reset is failed. %+v (but continued)", err)
+			}
+		}
+
 		log.Printf("sync repository; cd %s && git pull", repoDir)
-		cmd := exec.Command("git", "pull", "--rebase")
-		cmd.Dir = repoDir
-		if err := cmd.Run(); err != nil {
-			log.Printf("git pull is failed. %+v (but continued)", err)
+		{
+			cmd := exec.Command("git", "pull", "--rebase")
+			cmd.Dir = repoDir
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				log.Printf("git pull is failed. %+v (but continued)", err)
+			}
 		}
 
 		copied := make([]string, 0, len(scanResult.BinaryFiles))
@@ -156,6 +170,7 @@ func run(config *internal.Config) error {
 			{
 				cmd := exec.Command("git", append([]string{"add"}, copied...)...)
 				cmd.Dir = repoDir
+				cmd.Stderr = os.Stderr
 				if err := cmd.Run(); err != nil {
 					log.Printf("WARN: handling binaries is failed. in git add. %+v\nignored.", err)
 					return nil
@@ -164,6 +179,7 @@ func run(config *internal.Config) error {
 			{
 				cmd := exec.Command("git", "commit", "-m", "from selfish")
 				cmd.Dir = repoDir
+				cmd.Stderr = os.Stderr
 				if err := cmd.Run(); err != nil {
 					log.Printf("WARN: handling binaries is failed. in git commit. %+v\nignored.", err)
 					return nil
@@ -172,6 +188,7 @@ func run(config *internal.Config) error {
 			{
 				cmd := exec.Command("git", "push")
 				cmd.Dir = repoDir
+				cmd.Stderr = os.Stderr
 				if err := cmd.Run(); err != nil {
 					log.Printf("WARN: handling binaries is failed. in git push. %+v\nignored.", err)
 					return nil
