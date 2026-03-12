@@ -2,7 +2,7 @@ package history_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -20,7 +20,7 @@ func must(t time.Time, err error) time.Time {
 }
 
 func TestSave(t *testing.T) {
-	fp, err := ioutil.TempFile(".", "")
+	fp, err := os.CreateTemp(".", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestSave(t *testing.T) {
 		"435048d99f77300e5c33dd7ab46dbca2,head,2018-03-10T16:23:57+09:00,create",
 	}
 
-	b, err := ioutil.ReadAll(rp)
+	b, err := io.ReadAll(rp)
 	if err != nil {
 		t.Fatal(err)
 	}

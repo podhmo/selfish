@@ -76,7 +76,7 @@ func (c *Config) FilePath(name string) (string, error) {
 }
 
 // Load :
-func (c *Config) Load(name string, ob interface{}) error {
+func (c *Config) Load(name string, ob any) error {
 	path, err := c.FilePath(name)
 	if err != nil {
 		return err
@@ -105,7 +105,7 @@ func (c *Config) Load(name string, ob interface{}) error {
 }
 
 // Save :
-func (c *Config) Save(name string, ob interface{}) error {
+func (c *Config) Save(name string, ob any) error {
 	path, err := c.FilePath(name)
 	if err != nil {
 		return err
