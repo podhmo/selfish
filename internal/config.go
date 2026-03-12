@@ -45,7 +45,7 @@ func (v ClientType) Validate() error {
 	case ClientTypeGithub, ClientTypeFake:
 		return nil
 	default:
-		return fmt.Errorf("%v is an invalid value for %v", v, reflect.TypeOf(v))
+		return fmt.Errorf("%v is an invalid value for %v", v, reflect.TypeFor[ClientType]())
 	}
 }
 

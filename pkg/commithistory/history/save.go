@@ -2,7 +2,7 @@ package history
 
 import (
 	"io"
-	"io/ioutil"
+
 	"log"
 	"os"
 
@@ -11,7 +11,7 @@ import (
 
 // saveFile :
 func saveFile(filename string, write func(w io.Writer) error) (rerr error) {
-	fp, err := ioutil.TempFile(".", "ch")
+	fp, err := os.CreateTemp(".", "ch")
 	if err != nil {
 		return errors.Wrap(err, "save, create tempfile")
 	}

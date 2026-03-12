@@ -1,8 +1,6 @@
 module github.com/podhmo/selfish
 
-go 1.24.0
-
-toolchain go1.24.3
+go 1.26.1
 
 require (
 	github.com/google/go-github/v68 v68.0.0

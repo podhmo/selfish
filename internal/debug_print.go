@@ -8,7 +8,7 @@ import (
 )
 
 // fprintJSON is pretty printed json output shorthand.
-func fprintJSON(w io.Writer, data interface{}) {
+func fprintJSON(w io.Writer, data any) {
 	encoder := json.NewEncoder(w)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(data); err != nil {
@@ -17,6 +17,6 @@ func fprintJSON(w io.Writer, data interface{}) {
 }
 
 // PrintJSON is similar that a relation about fmt.Printf and fmt.Fprintf.
-func PrintJSON(data interface{}) {
+func PrintJSON(data any) {
 	fprintJSON(os.Stdout, data)
 }

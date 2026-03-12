@@ -2,7 +2,7 @@ package history_test
 
 import (
 	"fmt"
-	"io/ioutil"
+
 	"os"
 	"testing"
 
@@ -74,9 +74,8 @@ func TestLoad(t *testing.T) {
 		}
 
 		for _, c := range candidates {
-			c := c
 			t.Run(c.msg, func(t *testing.T) {
-				fp, err := ioutil.TempFile(".", "")
+				fp, err := os.CreateTemp(".", "")
 				if err != nil {
 					t.Fatal(err)
 				}
