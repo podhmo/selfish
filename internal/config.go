@@ -16,6 +16,7 @@ type Config struct {
 
 	Alias      string     `flag:"alias" help:"alias name of uploaded gists"`
 	IsDelete   bool       `flag:"delete" help:"delete uploaded gists"`
+	IsSecret   bool       `flag:"secret" help:"upload gist as secret (not public)"`
 	IsSilent   bool       `flag:"silent" help:"don't open gist pages with browser, after uploading"`
 	ClientType ClientType `flag:"client" help:"if =fake, doesn't request {github, fake}"`
 	Files      []string   `flag:"-"`

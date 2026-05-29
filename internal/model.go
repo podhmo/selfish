@@ -17,8 +17,7 @@ import (
 type Commit = commithistory.Commit
 
 // NewGist is shorthand of github.Gist object creation
-func NewGist(filenames []string) (*github.Gist, error) {
-	public := true
+func NewGist(filenames []string, public bool) (*github.Gist, error) {
 	title := ""
 	files := make(map[github.GistFilename]github.GistFile)
 

@@ -108,7 +108,7 @@ func (app *App) Delete(ctx context.Context, latestCommit *Commit) error {
 func (app *App) Create(ctx context.Context, latestCommit *Commit, filenames []string) (*Commit, error) {
 	action := "create"
 	alias := app.Alias
-	g, err := app.Client.Create(ctx, filenames)
+	g, err := app.Client.Create(ctx, filenames, !app.Config.IsSecret)
 	if err != nil {
 		return nil, errors.Wrapf(err, "gist api %s", action)
 	}
@@ -137,7 +137,7 @@ func (app *App) Update(ctx context.Context, latestCommit *Commit, filenames []st
 	action := "update"
 	alias := app.Alias
 
-	g, err := app.Client.Update(ctx, latestCommit.ID, filenames)
+	g, err := app.Client.Update(ctx, latestCommit.ID, filenames, !app.Config.IsSecret)
 	if err != nil {
 		return nil, errors.Wrapf(err, "gist api %s", action)
 	}

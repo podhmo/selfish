@@ -20,8 +20,8 @@ type CreateResult struct {
 	raw       *github.Gist
 }
 
-func (c *Client) Create(ctx context.Context, filenames []string) (*CreateResult, error) {
-	gist, err := NewGist(filenames)
+func (c *Client) Create(ctx context.Context, filenames []string, public bool) (*CreateResult, error) {
+	gist, err := NewGist(filenames, public)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid file name is found. %q", filenames)
 	}
@@ -57,8 +57,8 @@ type UpdateResult struct {
 	raw       *github.Gist
 }
 
-func (c *Client) Update(ctx context.Context, gistID string, filenames []string) (*UpdateResult, error) {
-	gist, err := NewGist(filenames)
+func (c *Client) Update(ctx context.Context, gistID string, filenames []string, public bool) (*UpdateResult, error) {
+	gist, err := NewGist(filenames, public)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid file name is found. %q", filenames)
 	}
